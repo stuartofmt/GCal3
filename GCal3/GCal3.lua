@@ -2148,7 +2148,8 @@ local function addEventToCalendar(startTime, endTime, title, description)
           errormsg = "Fatal Error could not create variables file"
           DEBUG(1, errormsg)
           restart = true
-        end 
+        end
+        result = getVariables() -- initialize to default values
       end 
               
 	  -- save any changes to GCV that happened as part of setup
