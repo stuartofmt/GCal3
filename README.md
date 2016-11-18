@@ -1,5 +1,5 @@
 #DO NOT USE YET - STILL UNDER DEVELOPMENT
-#For Alt UI ONLY
+#For Alt UI on openLuup ONLY -- Do not install on Vera
 
 
 # GCal3
