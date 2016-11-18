@@ -13,7 +13,7 @@ local PLUGIN_NAME = "GCal3"
 local PRE = PLUGIN_NAME .. " device: "-- debug message prefix
 -- make the file names and paths available
 local BASEPATH = "/etc/cmh-ludl/" -- default vera directory for uploads
-local LIBPATH = BASEPATH -- default vera directory for modules
+-- local LIBPATH = BASEPATH -- default vera directory for modules
 local PLUGINPATH = BASEPATH .. PLUGIN_NAME .."/" -- sub directory to keep things uncluttered
 local JSON_MODULE = "dkjson.lua"
 --  local JSON_MODULE_SIZE = 16947 -- correct size of the json.lua file
@@ -2054,7 +2054,7 @@ local function addEventToCalendar(startTime, endTime, title, description)
 	  -- force to the default json file
 	  luup.attr_set("device_json", "D_GCal3.json", lul_device)
       
-	  local restart = false
+      local restart = false
       local errormsg = ""
       -- make sure we have a plugin specific directory
       local result = osExecute("/bin/ls " .. PLUGINPATH)
@@ -2117,6 +2117,7 @@ local function addEventToCalendar(startTime, endTime, title, description)
         end
 
         -- result = osExecute("ls " .. JSON_MODULE) -- check to see if the file is installed
+	DEBUG(3,"Checking for " .. JSON_MODULE)
         result= haveModule(JSON_MODULE)
         if (not result) then -- get the file
           DEBUG(3, "Getting " .. JSON_MODULE)
