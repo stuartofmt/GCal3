@@ -11,7 +11,7 @@ The document '[i]Setting up a Google V3 API Service Account[/i]' gives step-by-s
 
 **You need to set up credentials before you use GCAL3**
 
-##Installation and Users Guide**
+##Installation and Users Guide##
 Be sure to read the [i]Installation and User Guide[/i].
 There are a lot of features and the guide will help.  If the guide is in error, misleading or ambiguous
 I'll try to fix that too.
@@ -41,5 +41,3 @@ Most releases will be through the mios marketplace and the openLuup App Store.
 **Note: if you are upgrading from a release prior to 2.0 - please follow the procedure described here:**
 http://forum.micasaverde.com/index.php/topic,26692.msg276087.html#msg276087
 
-*Release 3.0*
-This is functionally the same as release 2.5 documented here:
