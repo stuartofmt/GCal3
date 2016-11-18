@@ -15,7 +15,7 @@ local PRE = PLUGIN_NAME .. " device: "-- debug message prefix
 local BASEPATH = "/etc/cmh-ludl/" -- default vera directory for uploads
 local LIBPATH = BASEPATH -- default vera directory for modules
 local PLUGINPATH = BASEPATH .. PLUGIN_NAME .."/" -- sub directory to keep things uncluttered
-local JSON_MODULE = LIBPATH .. "dkjson.lua"
+local JSON_MODULE = "dkjson.lua"
 --  local JSON_MODULE_SIZE = 16947 -- correct size of the json.lua file
 -- local DKJSON_MODULE = LIBPATH .. "dkjson.lua"
 local VARIABLES_FILE = ""
@@ -2120,7 +2120,7 @@ local function addEventToCalendar(startTime, endTime, title, description)
           end
         end
 
-        result = osExecute("ls " .. JSON_MODULE) -- check to see if the file is installed
+        -- result = osExecute("ls " .. JSON_MODULE) -- check to see if the file is installed
         result= haveModule(JSON_MODULE)
         if (not result) then -- get the file
           DEBUG(3, "Getting " .. JSON_MODULE)
