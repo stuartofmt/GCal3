@@ -340,9 +340,11 @@ end
 
 local function checkforcredentialFile(CredentialFile)
   -- check to see if there is a new credential file
-  local result = osExecute("/bin/ls " .. BASEPATH .. CredentialFile .. ".lzo")
+  -- local result = osExecute("/bin/ls " .. BASEPATH .. CredentialFile .. ".lzo")
+  local result = osExecute("/bin/ls " .. BASEPATH .. CredentialFile)
   if result == 0 then
-    result = decompress( BASEPATH .. CredentialFile, PLUGINPATH .. CredentialFile)
+    -- result = decompress( BASEPATH .. CredentialFile, PLUGINPATH .. CredentialFile)
+    result = osExecute("cp " .. BASEPATH .. CredentialFile .. " " .. PLUGINPATH .. CredentialFile)
   end
 
   --make sure we have a credentials file
