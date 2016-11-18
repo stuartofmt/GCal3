@@ -2170,6 +2170,7 @@ local function addEventToCalendar(startTime, endTime, title, description)
       local success, errormsg = setupEnvironment()
       
       if not success then
+	DEBUG(1, "Environment Setup Failed")
         local _ = copyLog()
         luup.variable_set(GCAL_SID, "gc_NextEvent",errormsg , lul_device)
         luup.variable_set(GCAL_SID, "gc_NextEventTime","Reboot Required" , lul_device)
@@ -2179,6 +2180,7 @@ local function addEventToCalendar(startTime, endTime, title, description)
       end
 
       -- Initialize all the plugin variables
+      DEBUG(1, "Initialize all the plugin variables")
       local _ = setupVariables()
 
       -- Get the Time Zone info
