@@ -266,7 +266,7 @@ end
 return str
 end
 
-local function trimString(s)
+function trimString(s)
   return string.match( s,"^()%s*$") and "" or string.match(s,"^%s*(.*%S)" )
 end
 
