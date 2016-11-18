@@ -82,7 +82,7 @@ local function DEBUG(level,s)
   if GC.debug == 0 then return end
   if (level <= GC.debug) then
     s = PRE .." - " .. s
-    local command = "echo " .. s .. " > " .. LOGFILE
+    local command = "echo " .. s .. " >> " .. "/etc/cmh-ludl/GCal3.log"
     local _ = os.execute(command)
     -- luup.log(s)
   end
