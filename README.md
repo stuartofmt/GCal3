@@ -1,10 +1,11 @@
 #DO NOT USE YET - STILL UNDER DEVELOPMENT
+#For Alt UI ONLY
 
 
 # GCal3
 A plugin for use with vera and openLuup home automation.
 
-#For Alt UI ONLY
+
 
 This version of Google Calendar supports the Google V3 API's and the necessary authentication required by Google.
 
