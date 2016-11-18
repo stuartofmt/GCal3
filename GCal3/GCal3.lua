@@ -2121,6 +2121,7 @@ local function addEventToCalendar(startTime, endTime, title, description)
         -- result = osExecute("ls " .. JSON_MODULE) -- check to see if the file is installed
 	DEBUG(3,"Checking for " .. JSON_MODULE)
         result= haveModule(JSON_MODULE)
+	DEBUG(1,"Result of module check was " .. tostring(result))
         if (not result) then -- get the file
           DEBUG(3, "Getting " .. JSON_MODULE)
           local http = require "socket.http"
@@ -2141,6 +2142,7 @@ local function addEventToCalendar(startTime, endTime, title, description)
         
 
       -- need to initialize the GCV Variables
+      DEBUG(1,"Checking for variables file")
       result = getVariables()
       if (not result) then
         result = osExecute("touch " .. VARIABLES_FILE)
@@ -2154,8 +2156,8 @@ local function addEventToCalendar(startTime, endTime, title, description)
               
 	  -- save any changes to GCV that happened as part of setup
       local _ = setVariables() -- need to update GCV
-      
-	  return (not restart), errormsg -- negated for syntax reasons
+      DEBUG(1,"Restart is set to " .. tostring(restart))
+      return (not restart), errormsg -- negated for syntax reasons
     end
 
     function GCalStartup()
