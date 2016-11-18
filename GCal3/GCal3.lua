@@ -1,4 +1,4 @@
--- Google Calendar Plugin
+-- Google Calendar Plugin for openLuup
 -- Constants
 local GCAL_VERSION = " V3.0"
 local GCAL_SID = "urn:srs-com:serviceId:GCalIII"
