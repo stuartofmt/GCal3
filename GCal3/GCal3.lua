@@ -12,16 +12,16 @@ local SECURITY_SID = "urn:micasaverde-com:serviceId:SecuritySensor1"
 local PLUGIN_NAME = "GCal3"
 local PRE = PLUGIN_NAME .. " device: "-- debug message prefix
 -- make the file names and paths available
-local LIBPATH = "/usr/lib/lua/" -- default vera directory for modules
 local BASEPATH = "/etc/cmh-ludl/" -- default vera directory for uploads
+local LIBPATH = BASEPATH -- default vera directory for modules
 local PLUGINPATH = BASEPATH .. PLUGIN_NAME .."/" -- sub directory to keep things uncluttered
 local JSON_MODULE = LIBPATH .. "json.lua"
-local JSON_MODULE_SIZE = 16947 -- correct size of the json.lua file
-local DKJSON_MODULE = LIBPATH .. "dkjson.lua"
+--  local JSON_MODULE_SIZE = 16947 -- correct size of the json.lua file
+-- local DKJSON_MODULE = LIBPATH .. "dkjson.lua"
 local VARIABLES_FILE = ""
-local LOGFILE = "/var/log/cmh/LuaUPnP.log"
+local LOGFILE = BASEPATH .. "LuaUPnP.log"
 local LOGFILECOPY = ""
-local LOGFILECOMPRESSED = ""
+-- local LOGFILECOMPRESSED = ""
 local SETUPFAIL = true
 
 local GC = {} -- Main plugin Variables
@@ -266,7 +266,7 @@ end
 return str
 end
 
-function trimString(s)
+local function trimString(s)
   return string.match( s,"^()%s*$") and "" or string.match(s,"^%s*(.*%S)" )
 end
 
@@ -1993,16 +1993,16 @@ local function addEventToCalendar(startTime, endTime, title, description)
     function copyLog()
       local device = tostring(luup.device)
       DEBUG(1,"*****************")
-      DEBUG(1,device .. "-GCal3.log created")
+      DEBUG(1,"Creating " .. device .. "-GCal3.log")
       DEBUG(1,"*****************")
       luup.variable_set(GCAL_SID, "gc_NextEvent","Creating Log File" , lul_device)
       luup.variable_set(GCAL_SID, "gc_NextEventTime","" , lul_device)
       local errormsg = ""
-      LOGFILECOPY = "/var/log/cmh/" .. device .. "-GCal3.log"
-      LOGFILECOMPRESSED = BASEPATH .. device .. "-GCal3.log.lzo"
+      LOGFILECOPY = BASEPATH .. device .. "-GCal3.log"
+      -- LOGFILECOMPRESSED = BASEPATH .. device .. "-GCal3.log.lzo"
 
-      -- get rid of old compressed file
-      local command = "/bin/rm -f " .. LOGFILECOMPRESSED
+      -- get rid of old device log file
+      local command = "/bin/rm -f " .. LOGFILECOPY
       local result = osExecute(command)
 
       -- flush the write buffer
@@ -2017,21 +2017,9 @@ local function addEventToCalendar(startTime, endTime, title, description)
         errormsg ="Failed to create: " .. LOGFILECOPY .. " : " ..  tostring(result)
         luup.variable_set(GCAL_SID, "gc_NextEvent","Could not Extract the Log File" , lul_device)
         DEBUG(1, errormsg)
-      end
-      
-      -- compress the log
-      command = "pluto-lzo c " .. LOGFILECOPY .. " " .. LOGFILECOMPRESSED
-      result = osExecute(command)
-      if (result ~= 0) then
-        errormsg ="Failed to create: " .. LOGFILECOMPRESSED .. " : " ..  tostring(result)
-        luup.variable_set(GCAL_SID, "gc_NextEvent","Could not Compress Log File" , lul_device)
-        DEBUG(1, errormsg)
       else
-        luup.variable_set(GCAL_SID, "gc_NextEvent","Log File Created" , lul_device)
+        luup.variable_set(GCAL_SID, "gc_NextEvent","Log File Created" , lul_device) 
       end
-      -- remove the uncompressed version
-      command = "/bin/rm -f " .. LOGFILECOPY
-      result = osExecute(command)
       luup.call_timer("GCalMain",1,1,"","fromcopyLog")
       return
     end
@@ -2132,59 +2120,26 @@ local function addEventToCalendar(startTime, endTime, title, description)
           end
         end
 
-        local Module = "dkjson"
-        result = haveModule(Module)
-        DEBUG(1,"Check for module: " .. Module .. " returned " .. tostring(result))
-        if result then
-          GC.dkjson = true
-          local command = "stat -c%F " .. JSON_MODULE -- what type of file
-          local test = os_command(command)
-          test = trimString(test)
-          DEBUG(1,"Stat on " .. JSON_MODULE .. " is " .. test)
-          if (test == "regular file") then
-            DEBUG(1,"Remove " .. JSON_MODULE .. " and create a symbolic link")
-            -- delete the file
-            local _,_ = removefile(JSON_MODULE) -- ignore errors
-            -- create a symlink
-            local _ = osExecute("ln -s " .. DKJSON_MODULE .. " " .. JSON_MODULE)
-          elseif (test == "symbolic link") then
-            -- do nothing
-            DEBUG(1,JSON_MODULE .. " already a symbolic link")
-          else
-          -- file does not exist so create the symlink
-          DEBUG(1,JSON_MODULE .. " does not exist - create a symbolic link")
-          local _ = osExecute("ln -s " .. DKJSON_MODULE .. " " .. JSON_MODULE)
-        end
-        else
-          GC.dkjson = false
-          Module = "json"
-          local command = "stat -c%s " .. JSON_MODULE
-          result = os_command(command)
-          result = string.gsub(result, "\n", "")-- get rid of trailing new line
-          DEBUG(1,"Check for module: " .. Module .. " returned size of " .. result)
-          if (tonumber(result) ~= JSON_MODULE_SIZE) then -- need to download json.lua module
-            -- get rid of the old file
-            local _,_ = removefile(JSON_MODULE) -- ignore errors
-            -- make sure that LIBPATH is on the lua search path
-            local test = ";" .. LIBPATH .. "%?.lua;"
-            local inpath = string.find(package.path,test)
-            if inpath == nil then
-              DEBUG(1,"Full Package path: " .. package.path)
-              DEBUG(1,LIBPATH .. " is missing from lua search path")
-              luup.variable_set(GCAL_SID, "gc_NextEvent","Fatal Error - Unsuported LIBPATH" , lul_device)
-              restart = true
-              return (not restart), errormsg -- negated for syntax reasons
-            end
-            local location = "http://code.mios.com/trac/mios_google_calendar_ii_plugin/raw-attachment/wiki/WikiStart/json.lua"
-            result , errormsg = getfile(JSON_MODULE,location)
-            if (not result) then
-              errormsg = "Fatal Error - Could not download: " .. JSON_MODULE
-              DEBUG(1, errormsg)
-              restart = true
-              return (not restart), errormsg -- negated for syntax reasons
-            end
+        result = osExecute("ls " .. JSON_MODULE) -- check to see if the file is installed
+        result= haveModule(JSON_MODULE)
+        if (not result) then -- get the file
+          DEBUG(3, "Getting " .. JSON_MODULE)
+          local http = require "socket.http"
+          --local https = require "ssl.https"
+          local ltn12 = require "ltn12"
+          --local lfs = require "lfs"  
+          _, result = http.request{url = "http://dkolf.de/src/dkjson-lua.fsl/raw/dkjson.lua?name=16cbc26080996d9da827df42cb0844a25518eeb3",sink = ltn12.sink.file(io.open("dkjson.lua", "wb"))}
+          package.loaded.http = nil
+          --package.loaded.https = nil
+          package.loaded.ltn12 = nil
+          --package.loaded.lfs = nil
+          if (result ~= 200) then
+            errormsg = "Fatal Error could not get " .. JSON_MODULE
+            DEBUG(1, errormsg)
+            restart = true
           end
-        end
+        end 
+        
 
       -- need to initialize the GCV Variables
       result = getVariables()
