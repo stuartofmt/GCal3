@@ -1,3 +1,6 @@
+#DO NOT USE YET - STILL UNDER DEVELOPMENT
+
+
 # GCal3
 A plugin for use with vera and openLuup home automation.
 
