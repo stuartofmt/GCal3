@@ -82,7 +82,9 @@ local function DEBUG(level,s)
   if GC.debug == 0 then return end
   if (level <= GC.debug) then
     s = PRE .." - " .. s
-    luup.log(s)
+    local command = "echo " .. s .. " > " .. LOGFILE
+    local _ = os.execute(command)
+    -- luup.log(s)
   end
 end
 
