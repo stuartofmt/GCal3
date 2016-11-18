@@ -130,11 +130,7 @@ end
 local function moduleRequire (action)
   if action then -- true opens / false closes
     if type(json) ~= "table" then -- we assume all packages need to be loaded
-      if GC.dkjson then
-        json = require("dkjson")
-      else
-        json = require("json")
-      end
+      json = require("dkjson")
       https = require("ssl.https")
       https.timeout = 30
       https.method = "GET"
