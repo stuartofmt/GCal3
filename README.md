@@ -5,8 +5,6 @@
 # GCal3
 A plugin for use with vera and openLuup home automation.
 
-
-
 This version of Google Calendar supports the Google V3 API's and the necessary authentication required by Google.
 
 ##Google Credentials
@@ -26,16 +24,19 @@ I'll try to fix that too.
 GCal3 has three levels of debug messages (1-3).   For troubleshooting, set gc_debug to 3.
 Each plugin has the ability to capture it's own log files or you can use the features in Alt UI
 
-To assist folks with initial setup / troubleshooting / proving that the plugin is working -- I have created a test calendar and a test set of credentials.
+To assist folks with initial setup / troubleshooting / proving that the plugin is working -- I have created a test calendar and a test set of credentials.  These are setup as part of the initial install.
 
-To use these, follow these steps (in this order).
-1. Switch the GCal plugin to Bypass Mode and leave it there until all the steps below are complete.
-2. Change the Credential File field to GCal3Test.json into the and Press "Set".
-3.  In the Control tab (of the plugin).  Copy the contents of the GCal3TestCalendar.txt file into the Calendar ID field and press "Set".
-4.  In the Apps --> Develop Apps --> Luup Files  Upload the GCal3Test.json file.
-5. Switch the GCal plugin to Arm Mode
+If you need to retest with the test files use thefollowing steps (in this order).
+1. Get a copy of the 2 files: GCal3TestCalendar.txt and GCal3Test.json from here
 
-You will now see the next event show up.  Note that these events are named for the time (in GMT) that they occur -- so the actual time, in your timezone may be different.
+
+2. Switch the GCal plugin to Bypass Mode and leave it there until all the steps below are complete.
+3. Change the Credential File field to GCal3Test.json into the and Press "Set".
+4.  In the Control tab (of the plugin).  Copy the contents of the GCal3TestCalendar.txt file into the Calendar ID field and press "Set".
+5.  Upload the GCal3Test.json file to /.....
+6. Switch the GCal plugin to Arm Mode
+
+You will then see the next event show up.  Note that these events are named for the time (in GMT) that they occur -- so the actual time, in your timezone may be different.
 
 **Be sure to replace the test values for CalendarID and Credential File with your own afterwards ( Following the sequence above).**
 
