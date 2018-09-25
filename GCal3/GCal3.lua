@@ -370,10 +370,18 @@ end
 -- Authorization related local functions
 
 local function checkforcredentialFile(CredentialFile)
-  -- check to see if there is a new credential file
+  -- check to see if there is a new compressed credential file
+  -- upload from vera compresses
   local result = osExecute("/bin/ls " .. BASEPATH .. CredentialFile .. ".lzo")
-  if result == 0 then
+  if result == 0 then -- decompress and move it to the plugin path
     result = decompress( BASEPATH .. CredentialFile, PLUGINPATH .. CredentialFile)
+  end
+  
+    -- check to see if there is a new uncompressed credential file
+    -- simple file copy for example openluup
+  local result = osExecute("/bin/ls " .. BASEPATH .. CredentialFile)
+  if result == 0 then -- move it to the plugin path
+    result = osExecute("mv " .. BASEPATH .. CredentialFile .. " " .. PLUGINPATH .. CredentialFile)
   end
 
   --make sure we have a credentials file
