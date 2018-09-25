@@ -45,7 +45,7 @@
         local success, msg = parseCalendarID(newCalendarID)
         if success then
         local _ = setVariables()
-         luup.variable_set(GCAL_SID, "gc_NextEvent","Restarting ..." , lul_device)
+         luup.variable_set(GCAL_SID, "gc_NextEvent","UI7 Restarting ...for UI5 press reload" , lul_device)
          luup.variable_set(GCAL_SID, "gc_NextEventTime","Changing Calendar ID" , lul_device)
          luup.reload()
         else
@@ -73,7 +73,7 @@
           return
         end
         luup.variable_set(GCAL_SID, "gc_NextEvent","Setting Credential File" , lul_device)
-        luup.variable_set(GCAL_SID, "gc_NextEventTime","Restarting ....." , lul_device)
+        luup.variable_set(GCAL_SID, "gc_NextEventTime","UI7 Restarting ...for UI5 press reload" , lul_device)
         luup.reload()
       </run>
     </action>
