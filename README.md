@@ -7,7 +7,7 @@ On first install, this plugin will connect to a test calendar so that you can ve
 
 You will need to first **Arm** the plugin and then click on **Check** to connect to the test calendar.
 
-After this you can enter your own CalendarID and Credentials file by following the instructions posted here:
+After this you can enter your own CalendarID and Credentials file by following the instructions and documentation posted here:
 
 http://forum.micasaverde.com/index.php/topic,49258.0.html?PHPSESSID=fe319nh3olsht801dg3ajb5vq1
 
