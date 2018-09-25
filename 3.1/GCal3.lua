@@ -2173,11 +2173,10 @@ local function addEventToCalendar(startTime, endTime, title, description)
       restart = restart or response
       if restart then DEBUG(1,"RESTART REQUIRED") end
 	  
-	  ---[[
+	  
 	  -- clean up old calendar tab files
       response,errormsg = removefile(BASEPATH .. "J_GCal3.js.lzo")
 	  response,errormsg = removefile(BASEPATH .. "J_GCal3_UI7.js.lzo")
-	  --]]
 	  	
       local Distro = ""
       if osExecute("cat /etc/*release | grep -i OpenWrt") == 0 then
@@ -2300,10 +2299,10 @@ local function addEventToCalendar(startTime, endTime, title, description)
 	  local UIjson	  
       if luup.openLuup then -- running on openluup
         UIVersion = 99
-        UIjson = "D_GCal3.json"
+        UIjson = "D_GCal3_UI7.json"
       elseif luup.version_major == 5 then -- UI5
         UIVersion = 5
-        UIjson = "D_GCal3.json"
+        UIjson = "D_GCal3_UI5.json"
       elseif luup.version_major == 7 then --UI7
         UIVersion = 7
         UIjson = "D_GCal3_UI7.json"
@@ -2325,23 +2324,6 @@ local function addEventToCalendar(startTime, endTime, title, description)
         restart = true
       end
       
-	  
-	  --[[luup.attr_set("device_json", "D_GCal3.json", lul_device) -- default for UI5 and openluup
-	   
-	  if ( GCV.UI7Check == "false") then 
-        if (luup.version_branch == 1 and luup.version_major == 7) then
-          GCV.UI7Check = "true" -- UI7 or openluup
-          if ( notluup.openLuup)  then -- only change if in Vera
-            luup.attr_set("device_json", "D_GCal3_UI7.json", lul_device)
-          end
-            -- save any changes to GCV that happened as part of setup
-            local _ = setVariables() -- need to update GCV
-            errormsg = "Configured for UI7 file"
-            DEBUG(1, errormsg)
-            restart = true
-          end
-        end
---]]
 -- Checks done return
 
       return (not restart), errormsg -- negated for syntax reasons
