@@ -1,10 +1,12 @@
 #Release Notes#
 
-**Note: if you are upgrading from a release prior to 2.0 - please follow the procedure described here:**
-http://forum.micasaverde.com/index.php/topic,26692.msg276087.html#msg276087
+*Release 3.1*
+ALt App Store and Mios will now be kept in sync with release numbering and use a common code base.
+This release fixes a problem introduced by google as well as adding small non-functional changes
+so that the vera code and the openluup code are the same
 
 *Release 3.0*
 This is functionally the same as release 2.5 documented here:
 http://forum.micasaverde.com/index.php/topic,26692.msg189513.html#msg189513
 
-Note however that the Calendar Tab is no longer available.
+
