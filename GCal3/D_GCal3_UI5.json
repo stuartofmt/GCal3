@@ -1,0 +1,407 @@
+{
+	"flashicon": "icons/Dimmable_Light.png",
+	"imgIconBody": "",
+	"imgIconDimmable": "",
+	"imgIconTurnable": "",
+	"imgIconMin": "",
+	"imgIconMax": "",
+	"halloIconsDir": "pics/hallo",
+	"x": "3",
+	"y": "5",
+	"inScene": "1",
+	"DisplayStatus": {
+		"Service": "urn:srs-com:serviceId:GCalIII",
+		"Variable": "gc_displaystatus",
+		"MinValue": "0",
+		"MaxValue": "100"
+	},
+	"state_icons": [
+		"Dimmable_Light_0.png",
+		"Dimmable_Light_50.png",
+		"Dimmable_Light_100.png"
+	],
+	"doc_url": {
+		"doc_language": 1,
+		"doc_manual": 1,
+		"doc_version": 1,
+		"doc_platform": 0,
+		"doc_page": "devices"
+	},
+	"ToggleButton": 1,
+	"Tabs": [
+		{
+			"Label": {
+				"lang_tag": "tabname_control",
+				"text": "Control"
+			},
+			"Position": "0",
+			"TabType": "flash",
+			"SceneGroup": [
+				{
+					"id": "1",
+					"top": "1",
+					"left": "0",
+					"x": "6",
+					"y": "5"
+				},
+				{
+					"id": "2",
+					"top": "1",
+					"left": "0",
+					"x": "6",
+					"y": "5"
+				}
+			],
+			"ControlGroup": [
+				{
+					"id": "1",
+					"isSingle": "1",
+					"scenegroup": "1"
+				},
+				{
+					"id": "2",
+					"isSingle": "1",
+					"scenegroup": "2"
+				}
+			],
+			"Control": [
+				{
+					"ControlGroup": "2",
+					"ControlType": "button",
+					"Label": {
+						"lang_tag": "cmd_arm",
+						"text": "Arm"
+					},
+					"left": 0,
+					"Display": {
+						"Service": "urn:micasaverde-com:serviceId:SecuritySensor1",
+						"Variable": "Armed",
+						"Value": "1",
+						"Top": 50,
+						"Left": 50,
+						"Width": 75,
+						"Height": 20
+					},
+					"Command": {
+						"Service": "urn:micasaverde-com:serviceId:SecuritySensor1",
+						"Action": "SetArmed",
+						"Parameters": [
+							{
+								"Name": "newArmedValue",
+								"Value": "1"
+							}
+						]
+					}
+				},
+				{
+					"ControlGroup": "2",
+					"ControlType": "button",
+					"Label": {
+						"lang_tag": "cmd_bypass",
+						"text": "Bypass"
+					},
+					"left": 1,
+					"Display": {
+						"Service": "urn:micasaverde-com:serviceId:SecuritySensor1",
+						"Variable": "Armed",
+						"Value": "0",
+						"Top": 50,
+						"Left": 150,
+						"Width": 75,
+						"Height": 20
+					},
+					"Command": {
+						"Service": "urn:micasaverde-com:serviceId:SecuritySensor1",
+						"Action": "SetArmed",
+						"Parameters": [
+							{
+								"Name": "newArmedValue",
+								"Value": "0"
+							}
+						]
+					}
+				},
+				{
+					"ControlGroup": "2",
+					"ControlType": "button",
+					"Label": {
+						"lang_tag": "GCalCheck",
+						"text": "Check"
+					},
+					"left": 2,
+					"Display": {
+						"Top": 50,
+						"Left": 250,
+						"Width": 75,
+						"Height": 20
+					},
+					"Command": {
+						"Service": "urn:srs-com:serviceId:GCalIII",
+						"Action": "GCalCheck"
+					}
+				},
+				{
+					"ControlGroup": "2",
+					"ControlType": "variable",
+					"top": "2",
+					"left": "0",
+					"x": "4",
+					"text_align": "left",
+					"Display": {
+						"Service": "urn:srs-com:serviceId:GCalIII",
+						"Variable": "gc_NextEvent",
+						"Top": 160,
+						"Left": 160,
+						"Width": 200,
+						"Height": 20
+					}
+				},
+				{
+					"ControlGroup": "2",
+					"ControlType": "variable",
+					"top": "3",
+					"left": "0",
+					"x": "4",
+					"text_align": "left",
+					"Display": {
+						"Service": "urn:srs-com:serviceId:GCalIII",
+						"Variable": "gc_NextEventTime",
+						"Top": 185,
+						"Left": 160,
+						"Width": 200,
+						"Height": 20
+					}
+				},
+				{
+					"ControlType": "button",
+					"Label": {
+						"lang_tag": "getLog",
+						"text": "Get Log"
+					},
+					"Display": {
+						"Service": "urn:srs-com:serviceId:GCalIII",
+						"Top": 50,
+						"Left": 500,
+						"Width": 75,
+						"Height": 20
+					},
+					"Command": {
+						"Service": "urn:srs-com:serviceId:GCalIII",
+						"Action": "copyLog"
+					}
+				},
+				{
+					"ControlType": "label",
+					"Label": {
+						"lang_tag": "gc_CalendarID",
+						"text": "Calendar ID : "
+					},
+					"text_align": "right",
+					"Display": {
+						"Top": 105,
+						"Left": 50,
+						"Width": 75,
+						"Height": 20
+					}
+				},
+				{
+					"ControlType": "input",
+					"ID": "new_gc_CalendarID",
+					"Display": {
+						"Top": 100,
+						"Left": 160,
+						"Width": 280,
+						"Height": 20
+					}
+				},
+				{
+					"ControlType": "button",
+					"Label": {
+						"lang_tag": "set_gc_CalendarID",
+						"text": "Set"
+					},
+					"Display": {
+						"Top": 100,
+						"Left": 500,
+						"Width": 75,
+						"Height": 20
+					},
+					"Command": {
+						"Service": "urn:srs-com:serviceId:GCalIII",
+						"Action": "SetGCalCalendarID",
+						"Parameters": [
+							{
+								"Name": "new_gc_CalendarID",
+								"ID": "new_gc_CalendarID"
+							}
+						]
+					}
+				},
+				{
+					"ControlType": "label",
+					"Label": {
+						"lang_tag": "gc_CredentialFile",
+						"text": "Credential File: "
+					},
+					"text_align": "right",
+					"Display": {
+						"Top": 130,
+						"Left": 50,
+						"Width": 75,
+						"Height": 20
+					}
+				},
+				{
+					"ControlType": "input",
+					"ID": "new_gc_CredentialFile",
+					"Display": {
+						"Top": 130,
+						"Left": 160,
+						"Width": 280,
+						"Height": 20
+					}
+				},
+				{
+					"ControlType": "button",
+					"Label": {
+						"lang_tag": "set_gc_CredentialFile",
+						"text": "Set"
+					},
+					"Display": {
+						"Top": 130,
+						"Left": 500,
+						"Width": 75,
+						"Height": 20
+					},
+					"Command": {
+						"Service": "urn:srs-com:serviceId:GCalIII",
+						"Action": "SetCredentialFile",
+						"Parameters": [
+							{
+								"Name": "new_gc_CredentialFile",
+								"ID": "new_gc_CredentialFile"
+							}
+						]
+					}
+				},
+				{
+					"ControlType": "label",
+					"top": "0",
+					"left": "0",
+					"Label": {
+						"lang_tag": "gc_NextEvent",
+						"text": "Next Event : "
+					},
+					"Display": {
+						"Top": 155,
+						"Left": 50,
+						"Width": 75,
+						"Height": 20
+					}
+				}
+			]
+		},
+		{
+			"Label": {
+				"lang_tag": "advanced",
+				"text": "Advanced"
+			},
+			"Position": "3",
+			"TabType": "javascript",
+			"ScriptName": "shared.js",
+			"Function": "advanced_device"
+		},
+		{
+			"Label": {
+				"lang_tag": "notifications",
+				"text": "Notifications"
+			},
+			"Position": "4",
+			"TabType": "javascript",
+			"ScriptName": "shared.js",
+			"Function": "device_notifications"
+		}
+	],
+	"eventList2": [
+		{
+			"id": 1,
+			"label": {
+				"lang_tag": "event_matches_keyword",
+				"text": "Event Matches Keyword"
+			},
+			"serviceId": "urn:micasaverde-com:serviceId:SecuritySensor1",
+			"argumentList": [
+				{
+					"id": 1,
+					"dataType": "boolean",
+					"defaultValue": "",
+					"allowedValueList": [
+						{
+							"On": "1",
+							"HumanFriendlyText": {
+								"lang_tag": "hft_calendar_event_tripped",
+								"text": "_DEVICE_NAME_: Tripped"
+							}
+						},
+						{
+							"Off": "0",
+							"HumanFriendlyText": {
+								"lang_tag": "hft_calendar_event_not_tripped",
+								"text": "_DEVICE_NAME_: Not Tripped"
+							}
+						}
+					],
+					"name": "Tripped",
+					"comparisson": "=",
+					"prefix": {
+						"lang_tag": "status",
+						"text": "Trigger when"
+					},
+					"suffix": {}
+				}
+			]
+		},
+		{
+			"id": 2,
+			"label": {
+				"lang_tag": "event_specified_name",
+				"text": "Event has a specified name"
+			},
+			"serviceId": "urn:srs-com:serviceId:GCalIII",
+			"argumentList": [
+				{
+					"id": 1,
+					"dataType": "string",
+					"defaultValue": "",
+					"name": "gc_TrippedEvent",
+					"comparisson": "=",
+					"prefix": {
+						"lang_tag": "event_name",
+						"text": "Trigger when event has name:"
+					},
+					"suffix": {},
+					"HumanFriendlyText": {
+						"lang_tag": "event_satisfied_with_name",
+						"text": "_DEVICE_NAME_ has event with name: _ARGUMENT_VALUE_"
+					}
+				}
+			]
+		},
+		{
+			"id": 3,
+			"label": {
+				"lang_tag": "event_start_or_end",
+				"text": "Event Start or End"
+			},
+			"serviceId": "urn:srs-com:serviceId:GCalIII",
+			"serviceStateTable": {
+				"gc_notify": {
+					"value": "1",
+					"comparisson": "="
+				}
+			}
+		}
+	],
+	"DeviceType": "urn:schemas-srs-com:device:GCal:3",
+	"device_type": "urn:schemas-srs-com:device:GCal:3"
+}
