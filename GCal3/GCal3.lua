@@ -1,6 +1,6 @@
--- Google Calendar Plugin for openLuup
+-- Google Calendar Plugin
 -- Constants
-local GCAL_VERSION = " V3.0"
+local GCAL_VERSION = " V2.7a1"
 local GCAL_SID = "urn:srs-com:serviceId:GCalIII"
 local SECURITY_SID = "urn:micasaverde-com:serviceId:SecuritySensor1"
 
@@ -12,17 +12,21 @@ local SECURITY_SID = "urn:micasaverde-com:serviceId:SecuritySensor1"
 local PLUGIN_NAME = "GCal3"
 local PRE = PLUGIN_NAME .. " device: "-- debug message prefix
 -- make the file names and paths available
+local LIBPATH = "/usr/lib/lua/" -- default vera directory for modules
 local BASEPATH = "/etc/cmh-ludl/" -- default vera directory for uploads
--- local LIBPATH = BASEPATH -- default vera directory for modules
 local PLUGINPATH = BASEPATH .. PLUGIN_NAME .."/" -- sub directory to keep things uncluttered
-local JSON_MODULE = "dkjson"
---  local JSON_MODULE_SIZE = 16947 -- correct size of the json.lua file
--- local DKJSON_MODULE = LIBPATH .. "dkjson.lua"
+local JWT_FILE = LIBPATH .. "googlejwt.sh"
+local JSON_MODULE = LIBPATH .. "json.lua"
+local JSON_MODULE_SIZE = 16947 -- correct size of the json.lua file
+local DKJSON_MODULE = LIBPATH .. "dkjson.lua"
+local SEM_FILE = PLUGINPATH .. PLUGIN_NAME ..".sem" -- semaphore file
 local VARIABLES_FILE = ""
-local LOGFILE = BASEPATH .. "LuaUPnP.log"
+local LOGFILE = "/var/log/cmh/LuaUPnP.log"
 local LOGFILECOPY = ""
--- local LOGFILECOMPRESSED = ""
+local LOGFILECOMPRESSED = ""
 local SETUPFAIL = true
+local CURLCMD = BASEPATH .. "curlcmd"
+
 
 local GC = {} -- Main plugin Variables
 GC.timeZone = 0
@@ -64,12 +68,12 @@ GC.notifyLog = {}
 GC.processLockCount = 0
 GC.Disconnected = ""
 GC.dkjson = true
-GC.CalendarID = "Not Set"
+GC.CalendarID = "rkhle303chdgeg5lpthj2jvsk4%40group.calendar.google.com" -- test calendar
 GC.Interval = 180 * 60 -- default of 3 hrs
 
 -- pointers for required modules
 local json = nil
--- local http
+local http = nil
 local https = nil
 local ltn12 = nil
 
@@ -82,8 +86,6 @@ local function DEBUG(level,s)
   if GC.debug == 0 then return end
   if (level <= GC.debug) then
     s = PRE .." - " .. s
-    -- local command = "echo " .. s .. " >> " .. "/etc/cmh-ludl/GCal3.log"
-    -- local _ = os.execute(command)
     luup.log(s)
   end
 end
@@ -121,7 +123,7 @@ local function readfromfile(filename)
 end
 
 local function writetofile (filename,package)
-  DEBUG(3,"local function: writetoFile")
+  DEBUG(3,"local function: writetofile")
   local f = assert(io.open(filename, "w"))
   local t = f:write(package)
   f:close()
@@ -132,7 +134,12 @@ end
 local function moduleRequire (action)
   if action then -- true opens / false closes
     if type(json) ~= "table" then -- we assume all packages need to be loaded
-      json = require("dkjson")
+      if GC.dkjson then
+        json = require("dkjson")
+      else
+        json = require("json")
+      end
+	  http = require("socket.http")
       https = require("ssl.https")
       https.timeout = 30
       https.method = "GET"
@@ -143,6 +150,7 @@ local function moduleRequire (action)
     end
   else
     package.loaded.json = nil
+	package.loaded.http = nil
     package.loaded.https = nil
     package.loaded.ltn12 = nil
     return false
@@ -154,21 +162,21 @@ local function setVariables()
   DEBUG(3,"local function: setVariables")
 local temp = {}
 local Variables = {}
-local gcVariables = {}
+-- local gcVariables = {}
 temp.gCal = GCV.gCal
 temp.CalendarID = GCV.CalendarID
 local modulerequest = moduleRequire(true)
 table.insert(Variables, GCV)
-table.insert(gcVariables, temp)
+-- table.insert(gcVariables, temp)
 local variables = json.encode(Variables)
-local gcvariables = json.encode(gcVariables)
+-- local gcvariables = json.encode(gcVariables)
 local result = writetofile (VARIABLES_FILE, variables)
 if not result then
     local errormsg = "Could not create - " .. VARIABLES_FILE
     DEBUG(1, errormsg)
     return false , errormsg
 end
-luup.variable_set(GCAL_SID, "gc_Variables",gcvariables, lul_device)
+
 if modulerequest then moduleRequire(false) end
 end
 
@@ -182,20 +190,22 @@ local function getVariables()
     DEBUG(1, errormsg)
     return false , errormsg
   end
-  -- local s1 = luup.variable_get(GCAL_SID, "gc_Variables", lul_device)
+  
    contents = makejson(contents)
 GCV = {}
 local Variables = {}
 Variables = json.decode(contents) -- reads back all the global variables
 if Variables[1] == nil then Variables[1] = {} end -- could be very first use of plugin
-  GCV.CalendarID = Variables[1].CalendarID or "Not Set"
+  -- GCV.UI7Check = Variables[1].UI7Check or "false"
+  GCV.UIVersion = Variables[1].UIVersion or 0
+  GCV.CalendarID = Variables[1].CalendarID or "rkhle303chdgeg5lpthj2jvsk4%40group.calendar.google.com" -- test calendar
   GCV.Version = GCAL_VERSION
   GCV.TrippedID = Variables[1].TrippedID or ""
   GCV.LastCheck = Variables[1].LastCheck or os.date("%Y-%m-%dT%H:%M:%S", os.time())
   GCV.NextCheck = Variables[1].NextCheck or os.date("%Y-%m-%dT%H:%M:%S", os.time())
   GCV.gCal = Variables[1].gCal or "true"
   GCV.addCalendar = Variables[1].addCalendar or "false"
-  GCV.CredentialFile = Variables[1].CredentialFile or "GCal3.json"
+  GCV.CredentialFile = Variables[1].CredentialFile or "GCal3Test.json" -- test credentials
   GCV.CredentialCheck = Variables[1].CredentialCheck or false
   GCV.Events = Variables[1].Events or {}
   local _ = setVariables()
@@ -265,6 +275,10 @@ return str
 end
 
 local function trimString(s)
+  if s == nil then
+    DEBUG(1,"***Attempting trim nil string***")
+	return s
+  end 
   return string.match( s,"^()%s*$") and "" or string.match(s,"^%s*(.*%S)" )
 end
 
@@ -299,21 +313,38 @@ local function os_command (command)
 end
 
 local function curl_get(url)
-  -- quote the url
+DEBUG(3,"http(s) url: " .. url)
   url = '"' .. url .. '"'
-
-  local command = 'curl -ksL ' .. url
+  local curl = "/rom/usr/bin/curl"
+  command = curl .. ' -ksL ' .. url 
   local result = os_command(command)
-  command = 'curl -ksL -w "%{http_code} %{url_effective}\\n" ' .. url .. ' -o /dev/null' -- just ask return code and url
+  DEBUG(3,"curl result: " .. result)
+  url = ' -w "%{http_code} %{url_effective}\\n" ' .. url .. ' -o /dev/null'
+  command = curl .. ' -ksL ' .. url 
   local status = os_command(command)
+  status = status or "curl failed"
   status = tostring(status)
+  DEBUG(3,"curl returned status: " .. status)
   local _,_,code = string.find(status,'(%d%d%d)') -- get the first three digits
+--[[
+  local modulerequest = moduleRequire(true)
+  local body, code
+  if string.find(url,"https:") then
+    DEBUG(3,"making https request")
+    body,code = https.request(url)
+  else
+    DEBUG(3,"making http request")
+    body,code = http.request(url)
+  end
+  if modulerequest then moduleRequire(false) end
+]]
+
   code = tonumber(code)
+  code=code or "No Code"
   if code == 200 then
     return result, code
   else
-    DEBUG(3,"iCal request error: " .. status)
-    DEBUG(1,status)
+    DEBUG(1,"http error code: " .. tostring(code))
     return "", code
   end
 end
@@ -321,6 +352,8 @@ end
 local function getfile(filename,url)
   DEBUG(3,"Downloading " .. filename)
   DEBUG(3,"Attempting to download " .. url)
+  -- quote the url
+  -- url = '"' .. url .. '"'
   local file, code = curl_get(url)
   if (code == 200) then
     DEBUG(3,"Writing file " .. filename)
@@ -338,11 +371,9 @@ end
 
 local function checkforcredentialFile(CredentialFile)
   -- check to see if there is a new credential file
-  -- local result = osExecute("/bin/ls " .. BASEPATH .. CredentialFile .. ".lzo")
-  local result = osExecute("/bin/ls " .. BASEPATH .. CredentialFile)
+  local result = osExecute("/bin/ls " .. BASEPATH .. CredentialFile .. ".lzo")
   if result == 0 then
-    -- result = decompress( BASEPATH .. CredentialFile, PLUGINPATH .. CredentialFile)
-    result = osExecute("cp " .. BASEPATH .. CredentialFile .. " " .. PLUGINPATH .. CredentialFile)
+    result = decompress( BASEPATH .. CredentialFile, PLUGINPATH .. CredentialFile)
   end
 
   --make sure we have a credentials file
@@ -434,7 +465,7 @@ local function get_access_token()
   end
 
   -- get a new token
-  -- base 64 encoded form of {"alg":"RS256","typ":"JWT"}
+  -- jwt1 is base 64 encoded form of {"alg":"RS256","typ":"JWT"}
   local jwt1 = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9'
   DEBUG(2,"Getting a new token")
   local pemfile = PLUGINPATH .. string.gsub(GCV.CredentialFile,'.json(.*)',"") ..".pem"
@@ -460,7 +491,8 @@ local function get_access_token()
   jwt3 = string.gsub(jwt3,"=","")
   jwt3 = string.gsub(jwt3,"/","_")
   jwt3 = string.gsub(jwt3,"%+","-")
-  command ="echo -n " .. jwt3 .. " | openssl sha -sha256 -sign " .. pemfile .. " | openssl base64 -e"
+  -- command ="echo -n " .. jwt3 .. " | openssl sha -sha256 -sign " .. pemfile .. " | openssl base64 -e"
+  command ="echo -n " .. jwt3 .. " | openssl dgst -sha256 -sign " .. pemfile .. " | openssl base64 -e"
   local jwt4 = os_command(command)
   if not jwt4 then
     errormsg = "Error encoding jwt4"
@@ -473,12 +505,44 @@ local function get_access_token()
   jwt5 = string.gsub(jwt5,"=","")
   jwt5 = string.gsub(jwt5,"/","_")
   jwt5 = string.gsub(jwt5,"%+","-")
-  command = "curl -k -s -H " .. '"Content-type: application/x-www-form-urlencoded"' .. " -X POST " ..'"https://accounts.google.com/o/oauth2/token"' .. " -d " .. '"grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=' .. jwt3 .. "." .. jwt5 ..'"'
+    
+  local url = "https://accounts.google.com/o/oauth2/token"
+  local post = 'grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=' .. jwt3 .. "." .. jwt5
 
-  local token = os_command(command)
-  DEBUG(3,"Returned Token: " .. tostring(json.encode(token)))
+  local token = {}
+  local _, code,_,status = https.request
+  {
+    url = url,
+    method = "POST",
+    headers =
+    {
+      ["Content-Type"] = "application/x-www-form-urlencoded",
+      ["Content-Length"] = tostring(#post)
+      },
+      source = ltn12.source.string(post),
+	  sink = ltn12.sink.table(token)
+    }
   
-  if not token then
+  DEBUG(3, "https token code: " .. tostring(code))
+  DEBUG(3, "https token status: " .. tostring(status))
+  
+  if (code ~= 200) then -- anything other than 200 is an error
+      local errorMessage = ""
+      if (code == 404) then
+        errorMessage = "Check Credentials: " .. status
+      else
+        errorMessage = "token error code: " .. status
+      end
+      DEBUG(1,errorMessage)
+      luup.variable_set(GCAL_SID, "gc_NextEvent",errorMessage , lul_device)
+      luup.variable_set(GCAL_SID, "gc_NextEventTime","", lul_device)
+      return false, errorMessage
+    end
+   
+  token = table.concat(token)
+  DEBUG(3,"Returned token: " .. json.encode(token))
+  
+  if (not token) or (token == "")  then
     errormsg = "token request failed"
     DEBUG(1,errormsg)
     return false, errormsg
@@ -489,8 +553,8 @@ local function get_access_token()
     DEBUG(1,errormsg)
     return false, errormsg
   end
-
-  if (not string.find(token, '\"access_token\" :')) then
+  
+  if (not string.find(token, '\"access_token\"')) then
     errormsg = "missing access_token"
     DEBUG(1,errormsg)
     return false, errormsg
@@ -674,9 +738,8 @@ local function setupVariables()
     luup.variable_set(GCAL_SID, "gc_notifyType","", lul_device)
   end
   
-  s1 = luup.variable_get(GCAL_SID, "gc_Variables", lul_device)
-  s1 = makejson(s1)
-  luup.variable_set(GCAL_SID, "gc_Variables",s1, lul_device)
+-- get rid of old unused variable
+  luup.variable_set(GCAL_SID, "gc_Variables",nil, lul_device)
   
 end
 
@@ -705,7 +768,7 @@ local function getStartMinMax(startdelta,enddelta)
   end
   ta = os.date("*t", endtime)
   s2 = string.format("%d-%02d-%02dT%02d:%02d:%02d", ta.year, ta.month, ta.day + 1, 00, 00, 00) -- make it the end of day
-  endtime = strToTime(s2)
+  endtime = strToTime(s2) + GC.Interval
   
   -- adjust for any start and end delta
   if (startdelta < 0) then -- look back in time
@@ -780,6 +843,8 @@ local function requestiCalendar(startmin, startmax)
   luup.variable_set(GCAL_SID, "gc_NextEventTime","" , lul_device)
 
   DEBUG(3,"Requested url: " .. url)
+  -- quote the url
+  -- url = '"' .. url .. '"'
   local result, code = curl_get(url)
 
   if code ~= 200 then
@@ -818,14 +883,15 @@ if (inEvent == true) then
         if string.find(eventStart,"T") then -- not an all day event
         icalevent = {["start"] = {["dateTime"] = eventStart},["end"] = {["dateTime"] = eventEnd},["summary"] = eventName,["description"] = eventDescription}
       else
-      icalevent = {["start"] = {["date"] = eventStart},["end"] = {["date"] = eventEnd},["summary"] = eventName,["description"] = eventDescription}
-    end
-    table.insert(ical, icalevent)
-  end
+        icalevent = {["start"] = {["date"] = eventStart},["end"] = {["date"] = eventEnd},["summary"] = eventName,["description"] = eventDescription}
+      end
+	  DEBUG(3,"Added iCal event")
+      table.insert(ical, icalevent)
+      end
 end
 end
 end
-
+DEBUG(3, "Found " .. tostring(#ical) .. " iCal events")
 if (#ical == 0) then
   DEBUG(1,"No iCal events found. Retry later")
   luup.variable_set(GCAL_SID, "gc_NextEvent","No iCal events found today" , lul_device)
@@ -1991,16 +2057,16 @@ local function addEventToCalendar(startTime, endTime, title, description)
     function copyLog()
       local device = tostring(luup.device)
       DEBUG(1,"*****************")
-      DEBUG(1,"Creating " .. device .. "-GCal3.log")
+      DEBUG(1,device .. "-GCal3.log created")
       DEBUG(1,"*****************")
       luup.variable_set(GCAL_SID, "gc_NextEvent","Creating Log File" , lul_device)
       luup.variable_set(GCAL_SID, "gc_NextEventTime","" , lul_device)
       local errormsg = ""
-      LOGFILECOPY = BASEPATH .. device .. "-GCal3.log"
-      -- LOGFILECOMPRESSED = BASEPATH .. device .. "-GCal3.log.lzo"
+      LOGFILECOPY = "/var/log/cmh/" .. device .. "-GCal3.log"
+      LOGFILECOMPRESSED = BASEPATH .. device .. "-GCal3.log.lzo"
 
-      -- get rid of old device log file
-      local command = "/bin/rm -f " .. LOGFILECOPY
+      -- get rid of old compressed file
+      local command = "/bin/rm -f " .. LOGFILECOMPRESSED
       local result = osExecute(command)
 
       -- flush the write buffer
@@ -2015,9 +2081,21 @@ local function addEventToCalendar(startTime, endTime, title, description)
         errormsg ="Failed to create: " .. LOGFILECOPY .. " : " ..  tostring(result)
         luup.variable_set(GCAL_SID, "gc_NextEvent","Could not Extract the Log File" , lul_device)
         DEBUG(1, errormsg)
-      else
-        luup.variable_set(GCAL_SID, "gc_NextEvent","Log File Created" , lul_device) 
       end
+      
+      -- compress the log
+      command = "pluto-lzo c " .. LOGFILECOPY .. " " .. LOGFILECOMPRESSED
+      result = osExecute(command)
+      if (result ~= 0) then
+        errormsg ="Failed to create: " .. LOGFILECOMPRESSED .. " : " ..  tostring(result)
+        luup.variable_set(GCAL_SID, "gc_NextEvent","Could not Compress Log File" , lul_device)
+        DEBUG(1, errormsg)
+      else
+        luup.variable_set(GCAL_SID, "gc_NextEvent","Log File Created" , lul_device)
+      end
+      -- remove the uncompressed version
+      command = "/bin/rm -f " .. LOGFILECOPY
+      result = osExecute(command)
       luup.call_timer("GCalMain",1,1,"","fromcopyLog")
       return
     end
@@ -2053,10 +2131,8 @@ local function addEventToCalendar(startTime, endTime, title, description)
         end
 
     local function setupEnvironment()
-	  -- force to the default json file
-	  luup.attr_set("device_json", "D_GCal3.json", lul_device)
-      
       local restart = false
+      local response = false
       local errormsg = ""
       -- make sure we have a plugin specific directory
       local result = osExecute("/bin/ls " .. PLUGINPATH)
@@ -2069,6 +2145,32 @@ local function addEventToCalendar(startTime, endTime, title, description)
         end
       end
 
+      -- get rid of any old semaphore files
+      response,errormsg = removefile(SEM_FILE)
+      restart = restart or response
+      if restart then DEBUG(1,"RESTART REQUIRED") end
+
+      -- clean up any token files from previous version
+      response,errormsg = removefile("/etc/cmh-ludl/GCal3/*.token")
+      restart = restart or response
+      if restart then DEBUG(1,"RESTART REQUIRED") end
+
+      -- clean up the old script file
+      response,errormsg = removefile(JWT_FILE)
+      restart = restart or response
+      if restart then DEBUG(1,"RESTART REQUIRED") end
+
+      -- clean up old UI7 file
+      response,errormsg = removefile(BASEPATH .. "D_GCal37.json.lzo")
+      restart = restart or response
+      if restart then DEBUG(1,"RESTART REQUIRED") end
+	  
+	  ---[[
+	  -- clean up old calendar tab files
+      response,errormsg = removefile(BASEPATH .. "J_GCal3.js.lzo")
+	  response,errormsg = removefile(BASEPATH .. "J_GCal3_UI7.js.lzo")
+	  --]]
+	  	
       local Distro = ""
       if osExecute("cat /etc/*release | grep -i OpenWrt") == 0 then
         Distro = "OPENWRT"
@@ -2085,7 +2187,7 @@ local function addEventToCalendar(startTime, endTime, title, description)
       end
       
       DEBUG(1,"Distro is: " .. Distro)
-      if Distro ~= "OPENWRT" and Distro ~= "OPENWRT" and Distro ~= "DEBIAN" then
+      if Distro ~= "OPENWRT" and Distro ~= "RASPBIAN" and Distro ~= "DEBIAN" then
         luup.variable_set(GCAL_SID, "gc_NextEvent",Distro .. " is not supported" , lul_device)
       end
 
@@ -2118,31 +2220,62 @@ local function addEventToCalendar(startTime, endTime, title, description)
           end
         end
 
-        -- result = osExecute("ls " .. JSON_MODULE) -- check to see if the file is installed
-	DEBUG(3,"Checking for " .. JSON_MODULE)
-        result= haveModule(JSON_MODULE)
-	DEBUG(1,"Result of module check was " .. tostring(result))
-        if (not result) then -- get the file
-          DEBUG(3, "Getting " .. JSON_MODULE)
-          local http = require "socket.http"
-          --local https = require "ssl.https"
-          local ltn12 = require "ltn12"
-          --local lfs = require "lfs"  
-          _, result = http.request{url = "http://dkolf.de/src/dkjson-lua.fsl/raw/dkjson.lua?name=16cbc26080996d9da827df42cb0844a25518eeb3",sink = ltn12.sink.file(io.open("dkjson.lua", "wb"))}
-          package.loaded.http = nil
-          --package.loaded.https = nil
-          package.loaded.ltn12 = nil
-          --package.loaded.lfs = nil
-          if (result ~= 200) then
-            errormsg = "Fatal Error could not get " .. JSON_MODULE
-            DEBUG(1, errormsg)
-            restart = true
+        local Module = "dkjson"
+        result = haveModule(Module)
+        DEBUG(1,"Check for module: " .. Module .. " returned " .. tostring(result))
+        if result then
+          GC.dkjson = true
+          local command = "stat -c%F " .. JSON_MODULE -- what type of file
+          local test = os_command(command)
+          test = trimString(test)
+          DEBUG(1,"Stat on " .. JSON_MODULE .. " is " .. test)
+          if (test == "regular file") then
+            DEBUG(1,"Remove " .. JSON_MODULE .. " and create a symbolic link")
+            -- delete the file
+            local _,_ = removefile(JSON_MODULE) -- ignore errors
+            -- create a symlink
+            local _ = osExecute("ln -s " .. DKJSON_MODULE .. " " .. JSON_MODULE)
+          elseif (test == "symbolic link") then
+            -- do nothing
+            DEBUG(1,JSON_MODULE .. " already a symbolic link")
+          else
+          -- file does not exist so create the symlink
+          DEBUG(1,JSON_MODULE .. " does not exist - create a symbolic link")
+          local _ = osExecute("ln -s " .. DKJSON_MODULE .. " " .. JSON_MODULE)
+        end
+        else
+          GC.dkjson = false
+          Module = "json"
+          local command = "stat -c%s " .. JSON_MODULE
+          result = os_command(command)
+          result = string.gsub(result, "\n", "")-- get rid of trailing new line
+          DEBUG(1,"Check for module: " .. Module .. " returned size of " .. result)
+          if (tonumber(result) ~= JSON_MODULE_SIZE) then -- need to download json.lua module
+            -- get rid of the old file
+            local _,_ = removefile(JSON_MODULE) -- ignore errors
+            -- make sure that LIBPATH is on the lua search path
+            local test = ";" .. LIBPATH .. "%?.lua;"
+            local inpath = string.find(package.path,test)
+            if inpath == nil then
+              DEBUG(1,"Full Package path: " .. package.path)
+              DEBUG(1,LIBPATH .. " is missing from lua search path")
+              luup.variable_set(GCAL_SID, "gc_NextEvent","Fatal Error - Unsuported LIBPATH" , lul_device)
+              restart = true
+              return (not restart), errormsg -- negated for syntax reasons
+            end
+            local location = "http://code.mios.com/trac/mios_google_calendar_ii_plugin/raw-attachment/wiki/WikiStart/json.lua"
+            result , errormsg = getfile(JSON_MODULE,location)
+            if (not result) then
+              errormsg = "Fatal Error - Could not download: " .. JSON_MODULE
+              DEBUG(1, errormsg)
+              restart = true
+              return (not restart), errormsg -- negated for syntax reasons
+            end
           end
-        end 
-        
+        end
 
-      -- need to initialize the GCV Variables
-      DEBUG(1,"Checking for variables file")
+
+      -- need to initialize the GCV Variables first
       result = getVariables()
       if (not result) then
         result = osExecute("touch " .. VARIABLES_FILE)
@@ -2150,15 +2283,62 @@ local function addEventToCalendar(startTime, endTime, title, description)
           errormsg = "Fatal Error could not create variables file"
           DEBUG(1, errormsg)
           restart = true
-        end
-        result = getVariables() -- initialize to default values
+        end 
       end 
-              
-	  -- save any changes to GCV that happened as part of setup
-      local _ = setVariables() -- need to update GCV
-      DEBUG(1,"Restart is set to " .. tostring(restart))
+      
+	  -- set the correct UI for vera version
+	  -- Check which version we are running on
+	  local UIVersion
+	  local UIjson	  
+      if luup.openLuup then -- running on openluup
+        UIVersion = 99
+        UIjson = "D_GCal3.json"
+      elseif luup.version_major == 5 then -- UI5
+        UIVersion = 5
+        UIjson = "D_GCal3.json"
+      elseif luup.version_major == 7 then --UI7
+        UIVersion = 7
+        UIjson = "D_GCal3_UI7.json"
+      elseif luup.version_major == 8 then --UI8
+        UIVersion = 8
+        UIjson = "D_GCal3_UI7.json"
+      end
+      
+      errormsg = "Detected Version " .. tostring(UIVersion)
+      DEBUG(1, errormsg)
+      
+      if (GCV.UIVersion ~= UIVersion) then -- Need to (re) set the UI Version
+        luup.attr_set("device_json", UIjson, lul_device)
+        GCV.UIVersion = UIVersion
+        -- save any changes to GCV that happened as part of setup 
+        local _ = setVariables()
+        errormsg = "UI configured for version " .. tostring(GCV.UIVersion)
+        DEBUG(1, errormsg)
+        restart = true
+      end
+      
+	  
+	  --[[luup.attr_set("device_json", "D_GCal3.json", lul_device) -- default for UI5 and openluup
+	   
+	  if ( GCV.UI7Check == "false") then 
+        if (luup.version_branch == 1 and luup.version_major == 7) then
+          GCV.UI7Check = "true" -- UI7 or openluup
+          if ( notluup.openLuup)  then -- only change if in Vera
+            luup.attr_set("device_json", "D_GCal3_UI7.json", lul_device)
+          end
+            -- save any changes to GCV that happened as part of setup
+            local _ = setVariables() -- need to update GCV
+            errormsg = "Configured for UI7 file"
+            DEBUG(1, errormsg)
+            restart = true
+          end
+        end
+--]]
+-- Checks done return
+
       return (not restart), errormsg -- negated for syntax reasons
     end
+
 
     function GCalStartup()
       luup.set_failure(false, lul_device) -- just to clear any prior issues
@@ -2172,7 +2352,6 @@ local function addEventToCalendar(startTime, endTime, title, description)
       local success, errormsg = setupEnvironment()
       
       if not success then
-	DEBUG(1, "Environment Setup Failed")
         local _ = copyLog()
         luup.variable_set(GCAL_SID, "gc_NextEvent",errormsg , lul_device)
         luup.variable_set(GCAL_SID, "gc_NextEventTime","Reboot Required" , lul_device)
@@ -2182,7 +2361,6 @@ local function addEventToCalendar(startTime, endTime, title, description)
       end
 
       -- Initialize all the plugin variables
-      DEBUG(1, "Initialize all the plugin variables")
       local _ = setupVariables()
 
       -- Get the Time Zone info
