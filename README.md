@@ -5,7 +5,7 @@ This version of Google Calendar supports the Google V3 API's and the necessary a
 
 On first install, this plugin will connect to a test calendar so that you can verify that it is working correctly.
 
-You will need to first **Arm** the plugin and then click on **check** to connect to the test calendar.
+You will need to first **Arm** the plugin and then click on **Check** to connect to the test calendar.
 
 After this you can enter your own CalendarID and Credentials file by following the instructions posted here:
 
