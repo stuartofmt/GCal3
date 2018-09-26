@@ -2399,9 +2399,8 @@ local function addEventToCalendar(startTime, endTime, title, description)
           parseCalendarID(GCV.CalendarID)
           DEBUG(1,"Running Plugin ...")
 	   -- force check of calendar to get default
-          local _,_,_,_ = luup.call_action(GCAL_SID, "GCalCheck", lul_device)
+          local _ = luup.call_action(GCAL_SID, "GCalCheck", lul_device)
           -- go to standard loop
-          luup.call_timer("GCalMain",1,1,"","fromGCalStartup")
-          luup.call_timer("GCalMain",1,1,"","fromGCalStartup")
+          luup.call_timer("GCalMain",1,5,"","fromGCalStartup")
           return true
         end
