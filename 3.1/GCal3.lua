@@ -390,6 +390,7 @@ local function checkforcredentialFile(CredentialFile)
     DEBUG(3,"Could not find the credentials file: ")
     return false
   else
+    DEBUG(3,"Found the correct credentials file: ")
     return true
   end
 end
@@ -473,6 +474,8 @@ local function get_access_token()
   end
 
   -- get a new token
+  DEBUG(3, "Requesting new token using credential file " .. GCV.CredentialFile)
+  DEBUG(3, "With Client Email " .. GC.ClientEmail)
   -- jwt1 is base 64 encoded form of {"alg":"RS256","typ":"JWT"}
   local jwt1 = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9'
   DEBUG(2,"Getting a new token")
