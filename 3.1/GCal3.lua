@@ -21,11 +21,14 @@ local JSON_MODULE_SIZE = 16947 -- correct size of the json.lua file
 local DKJSON_MODULE = LIBPATH .. "dkjson.lua"
 local SEM_FILE = PLUGINPATH .. PLUGIN_NAME ..".sem" -- semaphore file
 local VARIABLES_FILE = ""
-local LOGFILE = "/var/log/cmh/LuaUPnP.log"
+local VERALOGFILE = "/var/log/cmh/LuaUPnP.log"
+local OPENLUUPLOGFILE = BASEPATH .. "logs/LuaUPnP.log"
 local LOGFILECOPY = ""
 local LOGFILECOMPRESSED = ""
 local SETUPFAIL = true
 local CURLCMD = BASEPATH .. "curlcmd"
+local UIVersion = 7  -- default
+local UIjson = "D_GCal3_UI7.json" -- default
 
 
 local GC = {} -- Main plugin Variables
@@ -68,7 +71,8 @@ GC.notifyLog = {}
 GC.processLockCount = 0
 GC.Disconnected = ""
 GC.dkjson = true
-GC.CalendarID = "rkhle303chdgeg5lpthj2jvsk4%40group.calendar.google.com" -- test calendar
+GC.CalendarID = "rkhle303chdgeg5lpthj2jvsk4%40group.calendar.google.com" -- default test calendar
+GC.CredentialFile = "GCal3Test.json" -- default test credentials
 GC.Interval = 180 * 60 -- default of 3 hrs
 
 -- pointers for required modules
@@ -198,14 +202,14 @@ Variables = json.decode(contents) -- reads back all the global variables
 if Variables[1] == nil then Variables[1] = {} end -- could be very first use of plugin
   -- GCV.UI7Check = Variables[1].UI7Check or "false"
   GCV.UIVersion = Variables[1].UIVersion or 0
-  GCV.CalendarID = Variables[1].CalendarID or "rkhle303chdgeg5lpthj2jvsk4%40group.calendar.google.com" -- test calendar
+  GCV.CalendarID = Variables[1].CalendarID or GC.CalendarID -- test calendar
   GCV.Version = GCAL_VERSION
   GCV.TrippedID = Variables[1].TrippedID or ""
   GCV.LastCheck = Variables[1].LastCheck or os.date("%Y-%m-%dT%H:%M:%S", os.time())
   GCV.NextCheck = Variables[1].NextCheck or os.date("%Y-%m-%dT%H:%M:%S", os.time())
   GCV.gCal = Variables[1].gCal or "true"
   GCV.addCalendar = Variables[1].addCalendar or "false"
-  GCV.CredentialFile = Variables[1].CredentialFile or "GCal3Test.json" -- test credentials
+  GCV.CredentialFile = Variables[1].CredentialFile or GC.CredentialFile -- test credentials
   GCV.CredentialCheck = Variables[1].CredentialCheck or false
   GCV.Events = Variables[1].Events or {}
   local _ = setVariables()
@@ -402,6 +406,7 @@ local function checkforcredentials()
   -- check to see if there is a new credential file
   -- the credentials file needs to be split into component parts
   local errormsg = ""
+  GCV.CredentialFile = GCV.CredentialFile or GC.CredentialFile -- make sure we have at least the default.
   if not checkforcredentialFile(GCV.CredentialFile) then
     errormsg = "No Credential File"
     return false , errormsg
@@ -2086,7 +2091,11 @@ local function addEventToCalendar(startTime, endTime, title, description)
       -- get the log entries for this device
       local pattern = "device: " .. device
       pattern = '"' .. pattern .. '"'
-      command = "grep " .. pattern .. " " .. LOGFILE .. " > " .. LOGFILECOPY
+      if (UIVersion ~= 99)  then -- on vera
+        command = "grep " .. pattern .. " " .. VERALOGFILE .. " > " .. LOGFILECOPY
+      else -- on openluup
+        command = "grep " .. pattern .. " " .. OPENLUUPLOGFILE .. " > " .. LOGFILECOPY
+      end
       result = osExecute(command)
       if (result ~= 0) then
         errormsg ="Failed to create: " .. LOGFILECOPY .. " : " ..  tostring(result)
@@ -2297,9 +2306,7 @@ local function addEventToCalendar(startTime, endTime, title, description)
       end 
       
 	  -- set the correct UI for vera version
-	  -- Check which version we are running on
-	  local UIVersion
-	  local UIjson	  
+	  -- Check which version we are running on	  
       if luup.openLuup then -- running on openluup
         UIVersion = 99
         UIjson = "D_GCal3_UI7.json"
