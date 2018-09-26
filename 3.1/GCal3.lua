@@ -599,7 +599,7 @@ local function setupVariables()
 
   s1 = luup.variable_get(SECURITY_SID, "Armed", lul_device)
   if s1 == nil then
-    luup.variable_set(SECURITY_SID, "Armed","0", lul_device)
+    luup.variable_set(SECURITY_SID, "Armed","1", lul_device)
   end
   -- Do not write back as it changes device state
 
