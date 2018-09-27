@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <implementation>
-  <files>GCal3Startup.lua</files>
+  <files>GCal3Setup.lua</files>
   <files>GCal3.lua</files>
   <incoming>
     <lua>luup.log("GCal3 - Incoming should not be called on this device")</lua>
