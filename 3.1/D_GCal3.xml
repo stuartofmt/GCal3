@@ -6,7 +6,7 @@
   </specVersion>
   <device>
     <deviceType>urn:schemas-srs-com:device:GCal:3</deviceType>
-    <staticJson>D_GCal3.json</staticJson>
+    <staticJson>D_GCal3_UI5.json</staticJson>
     <serviceList>
       <service>
         <serviceType>urn:schemas-srs-com:service:GCal:3</serviceType>
