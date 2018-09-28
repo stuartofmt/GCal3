@@ -15,11 +15,9 @@ local PRE = PLUGIN_NAME .. " device: "-- debug message prefix
 local LIBPATH = "/usr/lib/lua/" -- default vera directory for modules
 local BASEPATH = "/etc/cmh-ludl/" -- default vera directory for uploads
 local PLUGINPATH = BASEPATH .. PLUGIN_NAME .."/" -- sub directory to keep things uncluttered
-local JWT_FILE = LIBPATH .. "googlejwt.sh"
 local JSON_MODULE = LIBPATH .. "json.lua"
 local JSON_MODULE_SIZE = 16947 -- correct size of the json.lua file
 local DKJSON_MODULE = LIBPATH .. "dkjson.lua"
-local SEM_FILE = PLUGINPATH .. PLUGIN_NAME ..".sem" -- semaphore file
 local VARIABLES_FILE = ""
 local VERALOGFILE = "/var/log/cmh/LuaUPnP.log"
 local OPENLUUPLOGFILE = BASEPATH .. "logs/LuaUPnP.log"
@@ -162,59 +160,63 @@ local function moduleRequire (action)
 end
 
 -- Save GCV as a json string
-local function setVariables()
+local function setVariables() -- note two responses from call
   DEBUG(3,"local function: setVariables")
-local temp = {}
-local Variables = {}
--- local gcVariables = {}
-temp.gCal = GCV.gCal
-temp.CalendarID = GCV.CalendarID
-local modulerequest = moduleRequire(true)
-table.insert(Variables, GCV)
--- table.insert(gcVariables, temp)
-local variables = json.encode(Variables)
--- local gcvariables = json.encode(gcVariables)
-local result = writetofile (VARIABLES_FILE, variables)
-if not result then
+  local errormsg = ""
+  local temp = {}
+  local Variables = {}
+  -- local gcVariables = {}
+  temp.gCal = GCV.gCal
+  temp.CalendarID = GCV.CalendarID
+  local modulerequest = moduleRequire(true)
+  table.insert(Variables, GCV)
+  -- table.insert(gcVariables, temp)
+  local variables = json.encode(Variables)
+  -- local gcvariables = json.encode(gcVariables)
+  local result = writetofile (VARIABLES_FILE, variables)
+  if not result then
     local errormsg = "Could not create - " .. VARIABLES_FILE
     DEBUG(1, errormsg)
     return false , errormsg
-end
+  end
 
-if modulerequest then moduleRequire(false) end
+  if modulerequest then moduleRequire(false) end
+  return true, errormsg
 end
 
 -- Retrieve GCV as a json string
 local function getVariables()
+  local errormsg = ""
   DEBUG(3,"Function getVariables")
   local modulerequest = moduleRequire(true)
   local contents = readfromfile(VARIABLES_FILE)
   if not contents then
-    local errormsg = "Could not read " .. VARIABLES_FILE
+    errormsg = "Could not read " .. VARIABLES_FILE
     DEBUG(1, errormsg)
     return false , errormsg
   end
   
-   contents = makejson(contents)
-GCV = {}
-local Variables = {}
-Variables = json.decode(contents) -- reads back all the global variables
-if Variables[1] == nil then Variables[1] = {} end -- could be very first use of plugin
-  -- GCV.UI7Check = Variables[1].UI7Check or "false"
-  GCV.UIVersion = Variables[1].UIVersion or 0
-  GCV.CalendarID = Variables[1].CalendarID or GC.CalendarID -- test calendar
-  GCV.Version = GCAL_VERSION
-  GCV.TrippedID = Variables[1].TrippedID or ""
-  GCV.LastCheck = Variables[1].LastCheck or os.date("%Y-%m-%dT%H:%M:%S", os.time())
-  GCV.NextCheck = Variables[1].NextCheck or os.date("%Y-%m-%dT%H:%M:%S", os.time())
-  GCV.gCal = Variables[1].gCal or "true"
-  GCV.addCalendar = Variables[1].addCalendar or "false"
-  GCV.CredentialFile = Variables[1].CredentialFile or GC.CredentialFile -- test credentials
-  GCV.CredentialCheck = Variables[1].CredentialCheck or false
-  GCV.Events = Variables[1].Events or {}
-  local _ = setVariables()
-  if modulerequest then moduleRequire(false) end
-  return true
+  contents = makejson(contents)
+  GCV = {}
+  local Variables = {}
+  Variables = json.decode(contents) -- reads back all the global variables
+  if Variables[1] == nil then Variables[1] = {} end -- could be very first use of plugin
+    -- GCV.UI7Check = Variables[1].UI7Check or "false"
+    GCV.UIVersion = Variables[1].UIVersion or 0
+    GCV.CalendarID = Variables[1].CalendarID or GC.CalendarID -- test calendar
+    GCV.Version = GCAL_VERSION
+    GCV.TrippedID = Variables[1].TrippedID or ""
+    GCV.LastCheck = Variables[1].LastCheck or os.date("%Y-%m-%dT%H:%M:%S", os.time())
+    GCV.NextCheck = Variables[1].NextCheck or os.date("%Y-%m-%dT%H:%M:%S", os.time())
+    GCV.gCal = Variables[1].gCal or "true"
+    GCV.addCalendar = Variables[1].addCalendar or "false"
+    -- test credentials
+    GCV.CredentialFile = Variables[1].CredentialFile or GC.CredentialFile 
+    GCV.CredentialCheck = Variables[1].CredentialCheck or false
+    GCV.Events = Variables[1].Events or {}
+    local _,_ = setVariables()
+    if modulerequest then moduleRequire(false) end
+    return true, errormsg
 end
 
 local function makeBooleanstr(str,default)
@@ -1407,7 +1409,7 @@ function setTrippedOff(tripped)
 
   GC.trippedID = ""
   GCV.TrippedID = GC.trippedID
-  local _ = setVariables()
+  local _,_ = setVariables()
   luup.variable_set(GCAL_SID, "gc_displaystatus",0, lul_device)
   return "0"
 end
@@ -1435,7 +1437,7 @@ if (tripped == "1" and (event.endid ~= GC.trippedID)) then -- logically a new ev
     -- if the name and time for the start of the next event = the prior event finish and we should not retrip
     GC.trippedID = event.endid -- update with the continuation event
     GCV.TrippedID = GC.trippedID
-    local _ = setVariables()
+    local _,_ = setVariables()
     DEBUG(1,"Continuing prior event " .. GC.trippedID)
     return tripped
   else -- finish the previous and start the new event
@@ -1467,7 +1469,7 @@ function setTrippedOn()
   end
   GC.trippedID = event.endid -- the end id for the event
   GCV.TrippedID = GC.trippedID
-  local _ = setVariables()
+  local _,_ = setVariables()
 
   if (GC.Keyword ~= "") or (GC.triggerNoKeyword == "true") then
     luup.variable_set(SECURITY_SID, "Tripped","1", lul_device)
@@ -1691,7 +1693,7 @@ local function checkGCal() -- this is the main sequence
     GC.Disconnected = ""
     local _ = getEvents(events, GC.Keyword, GC.StartDelta, GC.EndDelta, GC.ignoreAllDayEvent, GC.ignoreKeyword, GC.exactKeyword)
     GCV.Events = GC.Events
-    local _ = setVariables()
+    local _,_ = setVariables()
   end
 
   -- save events, both calendar and active
@@ -1877,13 +1879,13 @@ function GCalMain(command)
 
   if (math.abs(nextCheckTime - GC.lastCheckTime) < 30 ) then
     -- no need to call GCalMain again if within 30 sec of last check (1/2 x 1 min resolution)
-    local _ = setVariables()
+    local _,_ = setVariables()
     DEBUG(1,"Next check already scheduled for " .. lastCheck)
   else
     -- Schedule the next check
     GCV.LastCheck = os.date("%Y-%m-%dT%H:%M:%S", nextCheckTime)
     GC.lastCheckTime = nextCheckTime
-    local _ = setVariables()
+    local _,_ = setVariables()
     local msg = "fromGCalMain with delay = " .. delay
     luup.call_timer("GCalMain",1,delay,"",msg)
     DEBUG(1,"Schedule next check for " .. delay .. " sec at " .. nextCheck)
@@ -2149,47 +2151,124 @@ local function addEventToCalendar(startTime, endTime, title, description)
           package.loaded.test = nil
           return true
         end
-
-    local function setupEnvironment()
-      local restart = false
-      local response = false
-      local errormsg = ""
+        
+        
+        
+        
+    local function setVariablesFile()
+    DEBUG(1,"local function: setVariablesFile")
+    local errormsg = ""
+    local result = true
       -- make sure we have a plugin specific directory
-      local result = osExecute("/bin/ls " .. PLUGINPATH)
+      result = osExecute("/bin/ls " .. PLUGINPATH)
       if (result ~= 0) then -- if the directory does not exist, it gets created
         result = osExecute("/bin/mkdir " .. PLUGINPATH)
         if (result ~= 0) then
           errormsg = "Fatal Error could not create plugin directory"
           DEBUG(1, errormsg)
-          restart = true
+          luup.variable_set(GCAL_SID, "gc_NextEvent",errormsg , lul_device)
+          return false
         end
       end
+      
+    -- make sure we have a variables file
+    local result = osExecute("/bin/ls " .. VARIABLES_FILE) -- does the file exist
+      if (result ~= 0) then -- create an empty file
+        result = osExecute("touch " .. VARIABLES_FILE)
+        if (result ~= 0) then
+          errormsg = "Fatal Error could not create variables file"
+          luup.variable_set(GCAL_SID, "gc_NextEvent",errormsg , lul_device)
+          DEBUG(1, errormsg)
+          return false
+        end
+      end
+      
+    -- initialize the variables file
+    -- note we get then set as the get has the defaults
+          result, errormsg = getVariables()
+          if (not result) then
+            DEBUG(1, errormsg)
+            luup.variable_set(GCAL_SID, "gc_NextEvent",errormsg , lul_device)
+            return false
+          end
+          result, errormsg = setVariables()
+          if (not result) then
+            DEBUG(1, errormsg)
+            luup.variable_set(GCAL_SID, "gc_NextEvent",errormsg , lul_device)
+            return false
+          end       
+    -- variables file initialized and saved
+    return true
+    end
+    
+local function setUI()  
+  -- set the correct UI for vera version
+  -- Check which version we are running on	  
+  if luup.openLuup then -- running on openluup
+    UIVersion = 99
+    UIjson = "D_GCal3_UI7.json"
+  elseif luup.version_major == 5 then -- UI5
+    UIVersion = 5
+    UIjson = "D_GCal3_UI5.json"
+  elseif luup.version_major == 7 then --UI7
+    UIVersion = 7
+    UIjson = "D_GCal3_UI7.json"
+  elseif luup.version_major == 8 then --UI8
+    UIVersion = 8
+    UIjson = "D_GCal3_UI7.json"
+  end  
+ 
+  local errormsg = "Detected Version " .. tostring(UIVersion)
+  DEBUG(1, errormsg)
+    
+  if (GCV.UIVersion ~= UIVersion) then -- Need to (re) set the UI Version
+    errormsg = "Prior Version was  " .. tostring(GCV.UIVersion)
+    DEBUG(1, errormsg)
+    luup.attr_set("device_json", UIjson, lul_device)
+    GCV.UIVersion = UIVersion
+    -- save change to GCV 
+    local _,_ = setVariables()
+    errormsg = "UI reconfigured for version " .. tostring(GCV.UIVersion)
+    DEBUG(1, errormsg)
+    if (GCV.UIVersion ~= 5) then
+      luup.variable_set(GCAL_SID, "gc_NextEvent","Restarting ..." , lul_device)
+      luup.reload()  -- reload to make UI change effective
+      -- return false
+    else
+      luup.variable_set(GCAL_SID, "gc_NextEvent","REBOOT Required" , lul_device)
+    return false -- need to manually restart
+    end
+  end
+  return true
+end   
+    
+local function cleanOldFiles()
+      local response
+      local errormsg = ""
 
-      -- get rid of any old semaphore files
-      response,errormsg = removefile(SEM_FILE)
-      restart = restart or response
-      if restart then DEBUG(1,"RESTART REQUIRED") end
+     -- get rid of any old semaphore files
+      response,errormsg = removefile(PLUGINPATH .. PLUGIN_NAME ..".sem")
 
       -- clean up any token files from previous version
-      response,errormsg = removefile("/etc/cmh-ludl/GCal3/*.token")
-      restart = restart or response
-      if restart then DEBUG(1,"RESTART REQUIRED") end
+      response,errormsg = removefile(PLUGINPATH .. "*.token")
 
       -- clean up the old script file
-      response,errormsg = removefile(JWT_FILE)
-      restart = restart or response
-      if restart then DEBUG(1,"RESTART REQUIRED") end
+      response,errormsg = removefile(LIBPATH .. "googlejwt.sh")
 
       -- clean up old UI7 file
       response,errormsg = removefile(BASEPATH .. "D_GCal37.json.lzo")
-      restart = restart or response
-      if restart then DEBUG(1,"RESTART REQUIRED") end
-	  
 	  
 	  -- clean up old calendar tab files
       response,errormsg = removefile(BASEPATH .. "J_GCal3.js.lzo")
 	  response,errormsg = removefile(BASEPATH .. "J_GCal3_UI7.js.lzo")
 	  	
+return true
+end   
+
+    local function setupEnvironment()
+      local result
+      local errormsg = ""
+
       local Distro = ""
       if osExecute("cat /etc/*release | grep -i OpenWrt") == 0 then
         Distro = "OPENWRT"
@@ -2207,7 +2286,7 @@ local function addEventToCalendar(startTime, endTime, title, description)
       
       DEBUG(1,"Distro is: " .. Distro)
       if Distro ~= "OPENWRT" and Distro ~= "RASPBIAN" and Distro ~= "DEBIAN" then
-        luup.variable_set(GCAL_SID, "gc_NextEvent",Distro .. " is not supported" , lul_device)
+        DEBUG(1,"*****  Distro may not be supported *****" , lul_device)
       end
 
         -- check to see if openssl is on the system
@@ -2220,7 +2299,6 @@ local function addEventToCalendar(startTime, endTime, title, description)
         if not version then
           DEBUG(1,"Installing openssl")
           -- install the default version for the vera model
-          local result = nil
           if Distro == "OPENWRT" then
             result = osExecute ("/bin/opkg update && opkg install openssl-util")
           elseif Distro == "RASPBIAN" or Distro == "DEBIAN" then
@@ -2235,7 +2313,7 @@ local function addEventToCalendar(startTime, endTime, title, description)
               errormsg = "Do you have root permission ?"
               DEBUG(1, errormsg)
             end
-            restart = true
+            return false, "Could not install openssl"
           end
         end
 
@@ -2261,7 +2339,7 @@ local function addEventToCalendar(startTime, endTime, title, description)
           -- file does not exist so create the symlink
           DEBUG(1,JSON_MODULE .. " does not exist - create a symbolic link")
           local _ = osExecute("ln -s " .. DKJSON_MODULE .. " " .. JSON_MODULE)
-        end
+          end
         else
           GC.dkjson = false
           Module = "json"
@@ -2278,65 +2356,23 @@ local function addEventToCalendar(startTime, endTime, title, description)
             if inpath == nil then
               DEBUG(1,"Full Package path: " .. package.path)
               DEBUG(1,LIBPATH .. " is missing from lua search path")
-              luup.variable_set(GCAL_SID, "gc_NextEvent","Fatal Error - Unsuported LIBPATH" , lul_device)
-              restart = true
-              return (not restart), errormsg -- negated for syntax reasons
+              errormsg = "Fatal Error - Unsuported LIBPATH"
+              luup.variable_set(GCAL_SID, "gc_NextEvent", errormsg, lul_device)
+              return false, errormsg -- negated for syntax reasons
             end
             local location = "http://code.mios.com/trac/mios_google_calendar_ii_plugin/raw-attachment/wiki/WikiStart/json.lua"
             result , errormsg = getfile(JSON_MODULE,location)
             if (not result) then
               errormsg = "Fatal Error - Could not download: " .. JSON_MODULE
               DEBUG(1, errormsg)
-              restart = true
-              return (not restart), errormsg -- negated for syntax reasons
+              return false, errormsg
             end
           end
         end
-
-
-      -- need to initialize the GCV Variables first
-      result = getVariables()
-      if (not result) then
-        result = osExecute("touch " .. VARIABLES_FILE)
-        if (result ~= 0) then
-          errormsg = "Fatal Error could not create variables file"
-          DEBUG(1, errormsg)
-          restart = true
-        end 
-      end 
-      
-	  -- set the correct UI for vera version
-	  -- Check which version we are running on	  
-      if luup.openLuup then -- running on openluup
-        UIVersion = 99
-        UIjson = "D_GCal3_UI7.json"
-      elseif luup.version_major == 5 then -- UI5
-        UIVersion = 5
-        UIjson = "D_GCal3_UI5.json"
-      elseif luup.version_major == 7 then --UI7
-        UIVersion = 7
-        UIjson = "D_GCal3_UI7.json"
-      elseif luup.version_major == 8 then --UI8
-        UIVersion = 8
-        UIjson = "D_GCal3_UI7.json"
-      end
-      
-      errormsg = "Detected Version " .. tostring(UIVersion)
-      DEBUG(1, errormsg)
-      
-      if (GCV.UIVersion ~= UIVersion) then -- Need to (re) set the UI Version
-        luup.attr_set("device_json", UIjson, lul_device)
-        GCV.UIVersion = UIVersion
-        -- save any changes to GCV that happened as part of setup 
-        local _ = setVariables()
-        errormsg = "UI configured for version " .. tostring(GCV.UIVersion)
-        DEBUG(1, errormsg)
-        restart = true
-      end
       
 -- Checks done return
 
-      return (not restart), errormsg -- negated for syntax reasons
+      return true, ""
     end
 
 
@@ -2347,17 +2383,23 @@ local function addEventToCalendar(startTime, endTime, title, description)
       DEBUG(1,"local function: GCalStartup")
       luup.variable_set(GCAL_SID, "gc_NextEvent","Initial Startup" , lul_device)
       luup.variable_set(GCAL_SID, "gc_NextEventTime","", lul_device)
-
-      -- Setup paths and cleanup old files etc etc
-      local success, errormsg = setupEnvironment()
       
+      -- Make sure we have a variables file with the variables set
+      
+      if not setVariablesFile() then return true end
+      
+      if not setUI() then return true end
+      
+      _ = cleanOldFiles() -- failures do not matter
+
+      -- Setup json interpreter and other environment needs
+      local success, errormsg = setupEnvironment()
+          
       if not success then
         local _ = copyLog()
         luup.variable_set(GCAL_SID, "gc_NextEvent",errormsg , lul_device)
-        luup.variable_set(GCAL_SID, "gc_NextEventTime","Reboot Required" , lul_device)
-        -- luup.set_failure(true, lul_device)
+        luup.variable_set(GCAL_SID, "gc_NextEventTime","Setup Failure: Check error logs" , lul_device)
         return true
-        -- return false -- just exit and stop
       end
 
       -- Initialize all the plugin variables
@@ -2391,7 +2433,7 @@ local function addEventToCalendar(startTime, endTime, title, description)
       if not ok then return true end -- stop and wait
 
         -- make sure we have an access token
-        DEBUG(1,"Checking for access-token")
+        DEBUG(1,"Startup: Checking for access-token")
         GC.access_token, msg = get_access_token ()
         DEBUG(3,"GC.access_token is: " .. tostring(GC.access_token))
         DEBUG(3,"GCV.CredentialCheck is " ..tostring(GCV.CredentialCheck))
