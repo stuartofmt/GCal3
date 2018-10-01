@@ -28,7 +28,6 @@ local CURLCMD = BASEPATH .. "curlcmd"
 local UIVersion = 7  -- default
 local UIjson = "D_GCal3_UI7.json" -- default
 
-
 local GC = {} -- Main plugin Variables
 GC.timeZone = 0
 GC.timeZonehr = 0
@@ -390,7 +389,7 @@ local function checkforcredentialFile(CredentialFile)
     result = osExecute("mv " .. BASEPATH .. CredentialFile .. " " .. PLUGINPATH .. CredentialFile)
   end
 
-  --make sure we have a credentials file
+  -- see if  we have a credentials file in the right directory
   result = osExecute("/bin/ls " .. PLUGINPATH .. CredentialFile) -- check to see if there is a file
   if result ~= 0 then -- we don't have a credential file
     DEBUG(3,"Could not find the credentials file: ")
@@ -547,7 +546,7 @@ local function get_access_token()
   if (code ~= 200) then -- anything other than 200 is an error
       local errorMessage = ""
       if (code == 404) then
-        errorMessage = "Check Credentials: " .. status
+        errorMessage = "Token: ID and Credentials mismatch: " .. status
       else
         errorMessage = "token error code: " .. status
       end
@@ -968,7 +967,7 @@ local function requestCalendar(startmin, startmax)
   if (code ~= 200) then -- anything other than 200 is an error
     local errorMessage
     if (code == 404) then
-      errorMessage = "Check Credentials: " .. code
+      errorMessage = "Calendar: ID and Credentials mismatch: " .. code
     else
       errorMessage = "Http error code: " .. code
     end
@@ -1937,7 +1936,7 @@ local function addEventToCalendar(startTime, endTime, title, description)
     if (code ~= 200) then -- anything other than 200 is an error
       local errorMessage = ""
       if (code == 404) then
-        errorMessage = "Check Credentials: " .. code
+        errorMessage = "Event: ID and Credentials mismatch: " .. code
       else
         errorMessage = "Http error code: " .. code
       end
@@ -2235,7 +2234,7 @@ local function setUI()
       luup.reload()  -- reload to make UI change effective
       -- return false
     else
-      luup.variable_set(GCAL_SID, "gc_NextEvent","REBOOT Required" , lul_device)
+      luup.variable_set(GCAL_SID, "gc_NextEvent","Manual REBOOT Required" , lul_device)
     return false -- need to manually restart
     end
   end
@@ -2414,7 +2413,8 @@ end
       if GCV.CalendarID == "Not Set" then
         luup.variable_set(GCAL_SID, "gc_NextEvent","CalendarID not set" , lul_device)
         DEBUG(1,"CalendarID not set")
-        ok = false
+        return true
+        --ok = false
       else
         luup.variable_set(GCAL_SID, "gc_NextEvent","CalendarID is set" , lul_device)
       end
@@ -2425,12 +2425,13 @@ end
       if not check then
         DEBUG(1, msg)
         luup.variable_set(GCAL_SID, "gc_NextEventTime", msg, lul_device)
-        ok = false
+        -- ok = false
+        return true
       else
         luup.variable_set(GCAL_SID, "gc_NextEventTime", msg , lul_device)
       end
 
-      if not ok then return true end -- stop and wait
+      -- if not ok then return true end -- stop and wait
 
         -- make sure we have an access token
         DEBUG(1,"Startup: Checking for access-token")
@@ -2441,12 +2442,13 @@ end
           -- error only if credential have not been previously checked and failed this time
           DEBUG(1, msg)
           luup.variable_set(GCAL_SID, "gc_NextEventTime", msg, lul_device)
-          ok = false
+          return true
+          -- ok = false
         else
           luup.variable_set(GCAL_SID, "gc_NextEventTime", msg , lul_device)
         end
 
-        if not ok then return true end -- stop and wait
+        -- if not ok then return true end -- stop and wait
           -- warp speed Mr. Sulu
           parseCalendarID(GCV.CalendarID)
           DEBUG(1,"Running Plugin ...")

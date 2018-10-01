@@ -243,13 +243,13 @@
 					"ControlType": "button",
 					"Label": {
 						"lang_tag": "set_gc_CalendarID",
-						"text": "Set Calendar"
+						"text": "Set"
 					},
 					"Display": {
 						"Service": "urn:srs-com:serviceId:GCalIII",
 						"Top": 105,
 						"Left": 500,
-						"Width": 120,
+						"Width": 75,
 						"Height": 25
 					},
 					"Command": {
@@ -292,13 +292,13 @@
 					"ControlType": "button",
 					"Label": {
 						"lang_tag": "set_gc_CredentialFile",
-						"text": "Set Credential"
+						"text": "Set"
 					},
 					"Display": {
 						"Service": "urn:srs-com:serviceId:GCalIII",
 						"Top": 145,
 						"Left": 500,
-						"Width": 120,
+						"Width": 75,
 						"Height": 25
 					},
 					"Command": {
