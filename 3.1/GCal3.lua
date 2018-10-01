@@ -2079,16 +2079,19 @@ local function addEventToCalendar(startTime, endTime, title, description)
       luup.variable_set(GCAL_SID, "gc_NextEvent","Creating Log File" , lul_device)
       luup.variable_set(GCAL_SID, "gc_NextEventTime","" , lul_device)
       local errormsg = ""
-      LOGFILECOPY = "/var/log/cmh/" .. device .. "-GCal3.log"
-      LOGFILECOMPRESSED = BASEPATH .. device .. "-GCal3.log.lzo"
+      LOGFILECOPY = BASEPATH .. device .. "-GCal3.log"
+      LOGFILECOMPRESSED = LOGFILECOPY .. ".lzo"
 
-      -- get rid of old compressed file
-      local command = "/bin/rm -f " .. LOGFILECOMPRESSED
+      -- get rid of old temp log files
+      local command = "/bin/rm -f " .. LOGFILECOPY
       local result = osExecute(command)
+      local command = "/bin/rm -f " .. LOGFILECOMPRESSED
+      result = osExecute(command)
 
       -- flush the write buffer
       command = "sync"
       result = osExecute(command)
+      
       -- get the log entries for this device
       local pattern = "device: " .. device
       pattern = '"' .. pattern .. '"'
@@ -2096,8 +2099,7 @@ local function addEventToCalendar(startTime, endTime, title, description)
         command = "grep " .. pattern .. " " .. VERALOGFILE .. " > " .. LOGFILECOPY
       else -- on openluup
         command = "grep " .. pattern .. " " .. OPENLUUPLOGFILE .. " > " .. LOGFILECOPY
-      end
-      
+      end     
       result = osExecute(command)
       if (result ~= 0) then
         errormsg ="Failed to create: " .. LOGFILECOPY .. " : " ..  tostring(result)
@@ -2107,7 +2109,7 @@ local function addEventToCalendar(startTime, endTime, title, description)
         luup.variable_set(GCAL_SID, "gc_NextEvent","Log File Created" , lul_device)
       end
       
-    if (UIVersion ~= 99) then  -- compress the log
+    if (UIVersion ~= 99) then  -- compress if on vera
       command = "pluto-lzo c " .. LOGFILECOPY .. " " .. LOGFILECOMPRESSED
       result = osExecute(command)
       if (result ~= 0) then
