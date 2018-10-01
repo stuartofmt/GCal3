@@ -5,11 +5,12 @@ This version of Google Calendar supports the Google V3 API's and the necessary a
 
 On first install, this plugin will connect to a test calendar so that you can verify that it is working correctly.
 
-You will need to first **Arm** the plugin and then click on **Check** to connect to the test calendar.
+You will need to first **Arm** the plugin to connect to the test calendar.
 
 After this you can enter your own CalendarID and Credentials file by following the instructions and documentation posted here:
-
 http://forum.micasaverde.com/index.php/topic,49258.0.html?PHPSESSID=fe319nh3olsht801dg3ajb5vq1
 
 ##Release Method##
 Most releases will be through the mios marketplace and the openLuup App Store.
+Release Notes are posted here:
+http://forum.micasaverde.com/index.php/topic,26692.msg189513.html#msg189513
