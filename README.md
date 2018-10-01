@@ -9,7 +9,7 @@ After this you can enter your own CalendarID and Credentials file by following t
 http://forum.micasaverde.com/index.php/topic,49258.0.html?PHPSESSID=fe319nh3olsht801dg3ajb5vq1
 
 ##Release Method##
-Formal releases will be through the mios marketplace and the openLuup App Store.
+Formal releases will be through the mios marketplace and the Alt App Store.
 Release Notes are posted here:
 
 Patches will be through the Mios forum here:
