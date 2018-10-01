@@ -10,7 +10,9 @@ http://forum.micasaverde.com/index.php/topic,49258.0.html?PHPSESSID=fe319nh3olsh
 
 ##Release Method##
 Formal releases will be through the mios marketplace and the Alt App Store.
+
 Release Notes are posted here:
+http://forum.micasaverde.com/index.php?topic=107871.msg420573#msg420573
 
 Patches will be through the Mios forum here:
 
