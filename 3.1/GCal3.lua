@@ -331,18 +331,6 @@ DEBUG(3,"http(s) url: " .. url)
   status = tostring(status)
   DEBUG(3,"curl returned status: " .. status)
   local _,_,code = string.find(status,'(%d%d%d)') -- get the first three digits
---[[
-  local modulerequest = moduleRequire(true)
-  local body, code
-  if string.find(url,"https:") then
-    DEBUG(3,"making https request")
-    body,code = https.request(url)
-  else
-    DEBUG(3,"making http request")
-    body,code = http.request(url)
-  end
-  if modulerequest then moduleRequire(false) end
-]]
 
   code = tonumber(code)
   code=code or "No Code"
@@ -508,7 +496,6 @@ local function get_access_token()
   jwt3 = string.gsub(jwt3,"=","")
   jwt3 = string.gsub(jwt3,"/","_")
   jwt3 = string.gsub(jwt3,"%+","-")
-  -- command ="echo -n " .. jwt3 .. " | openssl sha -sha256 -sign " .. pemfile .. " | openssl base64 -e"
   command ="echo -n " .. jwt3 .. " | openssl dgst -sha256 -sign " .. pemfile .. " | openssl base64 -e"
   local jwt4 = os_command(command)
   if not jwt4 then
@@ -1048,7 +1035,6 @@ local function getjsonEvents() -- this is really some sample code and useful for
 
   for i = 1,numberEvents do
     startevent = eventList[i].eventStart
-    --startevent = os.date("%Y-%m-%dT%H:%M:%S",startevent)
     startDate = os.date("%Y-%m-%d", startevent)
     startTime = os.date("%H:%M:%S", startevent)
     endevent = eventList[i].eventEnd
@@ -1389,15 +1375,11 @@ end
 
 function setTrippedOff(tripped)
   tripped = tostring(tripped)
-  -- DEBUG(3,"local function: setTrippedOff: " .. tostring(tripped))
   DEBUG(3,"local function: setTrippedOff: " .. tripped)
 
   luup.variable_set(GCAL_SID, "gc_Value", "", lul_device)
   GC.trippedEvent = ""
   luup.variable_set(GCAL_SID, "gc_TrippedEvent",GC.trippedEvent, lul_device)
-
-  -- luup.variable_set(SECURITY_SID, "Tripped","0", lul_device)  -- force to not Tripped
-
 
   if (tripped == "1") then
     luup.variable_set(SECURITY_SID, "Tripped","0", lul_device)
@@ -1415,7 +1397,6 @@ end
 
 function setTripped(i, tripped)
   tripped = tostring(tripped)
-  -- DEBUG(3,"local function: setTripped: " .. tostring(tripped))
   DEBUG(3,"local function: setTripped: " .. tripped)
   local event = {}
   event = GC.Events[i]
@@ -1877,7 +1858,8 @@ function GCalMain(command)
   DEBUG(3,"Next check is " .. nextCheck .. " and last scheduled check was at " .. lastCheck)
 
   if (math.abs(nextCheckTime - GC.lastCheckTime) < 30 ) then
-    -- no need to call GCalMain again if within 30 sec of last check (1/2 x 1 min resolution)
+    -- no need to call GCalMain again
+    -- if within 30 sec of last check (1/2 x 1 min resolution)
     local _,_ = setVariables()
     DEBUG(1,"Next check already scheduled for " .. lastCheck)
   else
@@ -1982,7 +1964,8 @@ local function addEventToCalendar(startTime, endTime, title, description)
     end
 
     --iterate through the even list
-    for j = #GC.CalendarEvents,1, -1 do -- process in revererse order so we have the right "i"
+    -- process in revererse order so we have the right "i"
+    for j = #GC.CalendarEvents,1, -1 do
     local eventList =json.decode(GC.CalendarEvents[j])
     local numberEvents = table.getn(eventList)
     local eventStart, eventEnd, eventName, eventDescription
@@ -2042,7 +2025,6 @@ local function addEventToCalendar(startTime, endTime, title, description)
         GC.retripTemp = GC.retrip -- save the current value
         GC.retrip = "false" -- prevent a retrip of events because of an update made by the calendar
         luup.call_timer("GCalMain",1,2,"","fromAddEvent")
-        -- luup.call_timer("",1,10,"","fromAddEvent")
       end
 
       GC.allowEventAdd = true -- allow events to be added to calendar
@@ -2155,8 +2137,6 @@ local function addEventToCalendar(startTime, endTime, title, description)
           package.loaded.test = nil
           return true
         end
-        
-        
         
         
     local function setVariablesFile()
@@ -2374,8 +2354,8 @@ end
           end
         end
       
--- Checks done return
 
+-- Checks are done
       return true, ""
     end
 
@@ -2394,7 +2374,7 @@ end
       
       if not setUI() then return true end
       
-      _ = cleanOldFiles() -- failures do not matter
+      local _ = cleanOldFiles() -- failures do not matter
 
       -- Setup json interpreter and other environment needs
       local success, errormsg = setupEnvironment()
@@ -2419,7 +2399,6 @@ end
         luup.variable_set(GCAL_SID, "gc_NextEvent","CalendarID not set" , lul_device)
         DEBUG(1,"CalendarID not set")
         return true
-        --ok = false
       else
         luup.variable_set(GCAL_SID, "gc_NextEvent","CalendarID is set" , lul_device)
       end
@@ -2430,13 +2409,10 @@ end
       if not check then
         DEBUG(1, msg)
         luup.variable_set(GCAL_SID, "gc_NextEventTime", msg, lul_device)
-        -- ok = false
         return true
       else
         luup.variable_set(GCAL_SID, "gc_NextEventTime", msg , lul_device)
       end
-
-      -- if not ok then return true end -- stop and wait
 
         -- make sure we have an access token
         DEBUG(1,"Startup: Checking for access-token")
@@ -2444,7 +2420,8 @@ end
         DEBUG(3,"GC.access_token is: " .. tostring(GC.access_token))
         DEBUG(3,"GCV.CredentialCheck is " ..tostring(GCV.CredentialCheck))
         if (not GC.access_token) and (not GCV.CredentialCheck) then
-          -- error only if credential have not been previously checked and failed this time
+          -- error only if credential have not been previously checked
+          -- and failed this time
           DEBUG(1, msg)
           luup.variable_set(GCAL_SID, "gc_NextEventTime", msg, lul_device)
           return true

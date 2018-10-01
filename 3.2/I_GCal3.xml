@@ -47,13 +47,6 @@
           local _ = setVariables()
          luup.variable_set(GCAL_SID, "gc_NextEventTime","Changing Calendar ID" , lul_device)
          luup.call_timer("GCalStartup",1,1,"","")
-         --if (GCV.UIVersion ~= 5) then
-         --  luup.variable_set(GCAL_SID, "gc_NextEvent","Restarting ..." , lul_device)
-         --  luup.reload()  -- reload to make UI change effective
-         --else
-         --  luup.variable_set(GCAL_SID, "gc_NextEvent","Manual REBOOT Required" , lul_device)
-         --  return false -- need to manually reboot
-         --end
         else
           GCV.CalendarID = "Not Set"
           local _ = setVariables()   
@@ -71,7 +64,6 @@
         GCV.CredentialCheck = false -- forces validation on change
         local _ = setVariables()
         GC.access_token = false
-        --GC.CalendarID = "Not Set"
         local credentialFile = checkforcredentialFile(newCredentialFile)
         if not credentialFile then
           luup.variable_set(GCAL_SID, "gc_NextEvent","Upload " .. GCV.CredentialFile , lul_device)
@@ -80,13 +72,6 @@
         end
         luup.variable_set(GCAL_SID, "gc_NextEvent","Setting Credential File" , lul_device)
         luup.call_timer("GCalStartup",1,1,"","")
-        --if (GCV.UIVersion ~= 5) then
-        --  luup.variable_set(GCAL_SID, "gc_NextEvent","Restarting ..." , lul_device)
-        --  luup.reload()  -- reload to make UI change effective
-        --else
-        --  luup.variable_set(GCAL_SID, "gc_NextEvent","Manual REBOOT Required" , lul_device)
-        --  return false -- need to manually restart
-        --end
       </run>
     </action>
     <action>
