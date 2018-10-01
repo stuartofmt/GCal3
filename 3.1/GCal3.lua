@@ -2097,26 +2097,29 @@ local function addEventToCalendar(startTime, endTime, title, description)
       else -- on openluup
         command = "grep " .. pattern .. " " .. OPENLUUPLOGFILE .. " > " .. LOGFILECOPY
       end
+      
       result = osExecute(command)
       if (result ~= 0) then
         errormsg ="Failed to create: " .. LOGFILECOPY .. " : " ..  tostring(result)
         luup.variable_set(GCAL_SID, "gc_NextEvent","Could not Extract the Log File" , lul_device)
         DEBUG(1, errormsg)
+      else
+        luup.variable_set(GCAL_SID, "gc_NextEvent","Log File Created" , lul_device)
       end
       
-      -- compress the log
+    if (UIVersion ~= 99) then  -- compress the log
       command = "pluto-lzo c " .. LOGFILECOPY .. " " .. LOGFILECOMPRESSED
       result = osExecute(command)
       if (result ~= 0) then
         errormsg ="Failed to create: " .. LOGFILECOMPRESSED .. " : " ..  tostring(result)
         luup.variable_set(GCAL_SID, "gc_NextEvent","Could not Compress Log File" , lul_device)
         DEBUG(1, errormsg)
-      else
-        luup.variable_set(GCAL_SID, "gc_NextEvent","Log File Created" , lul_device)
-      end
-      -- remove the uncompressed version
-      command = "/bin/rm -f " .. LOGFILECOPY
-      result = osExecute(command)
+       else -- remove the uncompressed version
+         command = "/bin/rm -f " .. LOGFILECOPY
+         result = osExecute(command)
+       end
+     end
+     
       luup.call_timer("GCalMain",1,1,"","fromcopyLog")
       return
     end
