@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<implementation>
+  <files>GCal3.lua</files>
+  <incoming>
+    <lua>luup.log("GCal3 - Incoming should not be called on this device")</lua>
+  </incoming>
+  <startup>GCalStartup</startup>
+  <actionList>
+    <action>
+      <serviceId>urn:micasaverde-com:serviceId:SecuritySensor1</serviceId>
+      <name>SetArmed</name>
+      <run>if (lul_settings.newArmedValue == "1") then
+          luup.variable_set(GCAL_SID, "gc_NextEvent","Checking ..." , lul_device)
+          luup.variable_set(GCAL_SID, "gc_NextEventTime","" , lul_device)
+          GC.allowEventAdd = true
+          GC.allowCalendarUpdate = true
+      end
+      luup.variable_set(SECURITY_SID, "Armed", lul_settings.newArmedValue, lul_device) 
+      luup.call_timer("GCalMain",1,1,"","fromSetArmed")</run>
+    </action>
+    <action>
+      <serviceId>urn:srs-com:serviceId:GCalIII</serviceId>
+      <name>GCalCheck</name>
+      <run>
+      local error = luup.variable_get(GCAL_SID, "gc_NextEventTime", lul_device) or ""
+      if (error == "Fatal Calendar Error") then
+        luup.variable_set(GCAL_SID, "gc_NextEvent","Check Internet Connection ..." , lul_device)
+        luup.variable_set(GCAL_SID, "gc_NextEventTime","and Reload Vera" , lul_device)
+        luup.reload()
+      end
+      luup.variable_set(GCAL_SID, "gc_NextEvent","Checking ..." , lul_device)
+      luup.variable_set(GCAL_SID, "gc_NextEventTime","" , lul_device)
+      luup.call_timer("GCalMain",1,1,"","fromGCalCheck")
+      </run>
+    </action>
+    <action>
+      <serviceId>urn:srs-com:serviceId:GCalIII</serviceId>
+      <name>SetGCalCalendarID</name>
+      <run>
+        local newCalendarID = trimString(lul_settings.new_gc_CalendarID)
+        GC.access_token = false -- since it may not match new calendar id
+        GC.CalendarID = "Not Set" -- Do we want to set GCV as well ?
+        GCV.CredentialCheck = false -- forces validation on change
+        local _ = setVariables()
+        local success, msg = parseCalendarID(newCalendarID)
+        if success then
+          local _ = setVariables()
+         luup.variable_set(GCAL_SID, "gc_NextEventTime","Changing Calendar ID" , lul_device)
+         luup.call_timer("GCalStartup",1,1,"","")
+         --if (GCV.UIVersion ~= 5) then
+         --  luup.variable_set(GCAL_SID, "gc_NextEvent","Restarting ..." , lul_device)
+         --  luup.reload()  -- reload to make UI change effective
+         --else
+         --  luup.variable_set(GCAL_SID, "gc_NextEvent","Manual REBOOT Required" , lul_device)
+         --  return false -- need to manually reboot
+         --end
+        else
+          GCV.CalendarID = "Not Set"
+          local _ = setVariables()   
+          luup.variable_set(GCAL_SID, "gc_NextEventTime",msg , lul_device)
+          return
+        end
+      </run>
+    </action>
+    <action>
+      <serviceId>urn:srs-com:serviceId:GCalIII</serviceId>
+      <name>SetCredentialFile</name>
+      <run>
+        local newCredentialFile = trimString(lul_settings.new_gc_CredentialFile)
+        GCV.CredentialFile = newCredentialFile
+        GCV.CredentialCheck = false -- forces validation on change
+        local _ = setVariables()
+        GC.access_token = false
+        --GC.CalendarID = "Not Set"
+        local credentialFile = checkforcredentialFile(newCredentialFile)
+        if not credentialFile then
+          luup.variable_set(GCAL_SID, "gc_NextEvent","Upload " .. GCV.CredentialFile , lul_device)
+          luup.variable_set(GCAL_SID, "gc_NextEventTime","then Reboot ..." , lul_device)
+          return
+        end
+        luup.variable_set(GCAL_SID, "gc_NextEvent","Setting Credential File" , lul_device)
+        luup.call_timer("GCalStartup",1,1,"","")
+        --if (GCV.UIVersion ~= 5) then
+        --  luup.variable_set(GCAL_SID, "gc_NextEvent","Restarting ..." , lul_device)
+        --  luup.reload()  -- reload to make UI change effective
+        --else
+        --  luup.variable_set(GCAL_SID, "gc_NextEvent","Manual REBOOT Required" , lul_device)
+        --  return false -- need to manually restart
+        --end
+      </run>
+    </action>
+    <action>
+      <serviceId>urn:srs-com:serviceId:GCalIII</serviceId>
+      <name>AddEvent</name>
+      <run>if GCV.addCalendar == "false" then
+       return false
+     end
+   DEBUG(3,"**********************************************")  
+	 if GC.allowEventAdd then
+     DEBUG(3,"Add Calendar Event Requested")
+	   GC.CalendarEvents[#GC.CalendarEvents + 1] = lul_settings.CalendarEvent -- add to end of table 
+     if GC.allowCalendarUpdate then -- block repeated calls
+	     local _ = luup.call_timer("createNewCalendarEvents",1,15,"","")
+		   GC.allowCalendarUpdate = false
+     end
+	   return true
+	 else
+	   DEBUG(3,"Add Calendar Event Rejected")
+	   return false
+	 end</run>
+    </action>
+    <action>
+      <serviceId>urn:srs-com:serviceId:GCalIII</serviceId>
+      <name>copyLog</name>
+      <run>local _ = copyLog()</run>
+    </action>
+  </actionList>
+</implementation>
