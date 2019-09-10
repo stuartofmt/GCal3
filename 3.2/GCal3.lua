@@ -742,6 +742,11 @@ local function setupVariables()
     luup.variable_set(GCAL_SID, "gc_notifyType","", lul_device)
   end
   
+  s1 = luup.variable_get(GCAL_SID, "gc_timedateformat", lul_device)
+  if s1 == nil then
+    luup.variable_set(GCAL_SID, "gc_timedateformat","%H:%M %b %d", lul_device)
+  end
+  
 -- get rid of old unused variable
   luup.variable_set(GCAL_SID, "gc_Variables",nil, lul_device)
   
@@ -1364,7 +1369,7 @@ for i = 1,numberEvents do
 end
 event = GC.Events[index]
 if (nextEvent ~= -1) then
-  nextEventTime = os.date("%H:%M %b %d", event.stime + GC.timeZone) .. " to " .. os.date("%H:%M %b %d", event.etime + GC.timeZone)
+  nextEventTime = os.date(gc_timedateformat, event.stime + GC.timeZone) .. " to " .. os.date(gc_timedateformat, event.etime + GC.timeZone)
 end
 eventtitle = GC.Disconnected .. string.sub(eventtitle,1,40) 
 luup.variable_set(GCAL_SID, "gc_NextEvent",eventtitle , lul_device)
