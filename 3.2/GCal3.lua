@@ -1,6 +1,6 @@
 -- Google Calendar Plugin
 -- Constants
-local GCAL_VERSION = " V3.1"
+local GCAL_VERSION = " V3.2"
 local GCAL_SID = "urn:srs-com:serviceId:GCalIII"
 local SECURITY_SID = "urn:micasaverde-com:serviceId:SecuritySensor1"
 
